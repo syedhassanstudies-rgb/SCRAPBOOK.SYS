@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "EB Garamond", serif;
+  --font-mono: "Space Mono", monospace;
+
+  --color-paper-base: #fcf9f8;
+  --color-paper-ink: #1b1c1c;
+  --color-paper-outline: #79776f;
+  --color-paper-secondary: #7b5455;
+  --color-paper-tertiary: #4c6455;
+  --color-tape-yellow: #e8e4d9;
+}
+
+@layer base {
+  body {
+    @apply bg-paper-base text-paper-ink antialiased font-mono;
+    background-image: 
+        linear-gradient(#e4e2e1 1px, transparent 1px),
+        linear-gradient(90deg, #e4e2e1 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -1px -1px;
+    background-attachment: fixed;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 500;
+  }
+}
+
+/* Custom Lo-fi scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-[#f4f1ee] border-l border-paper-outline/30;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-paper-outline/20 border-2 border-[#f4f1ee] hover:bg-paper-outline/40 transition-colors;
+}
+
+@layer utilities {
+  .analog-shadow {
+    box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.1),
+                1px 1px 4px 0px rgba(0,0,0,0.05);
+  }
+  .analog-shadow-lg {
+    box-shadow: 6px 6px 0px 0px rgba(0,0,0,0.1),
+                2px 2px 6px 0px rgba(0,0,0,0.05);
+  }
+  .paper-edge {
+    clip-path: polygon(
+      0% 2%, 2% 0%, 98% 1%, 100% 3%, 
+      99% 97%, 97% 100%, 3% 99%, 0% 98%
+    );
+  }
+}
+

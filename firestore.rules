@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow get: if true;
+      allow list: if true; // Let the query filters handle privacy or enforce it via resource.data if present
+      
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      
+      allow update: if isOwner(userId) 
+                    && isValidUser(incoming())
+                    && incoming().diff(existing()).affectedKeys()
+                        .hasOnly(['username', 'bio', 'subtitle', 'avatarUrl', 'isPublic', 'backgroundColor', 'backgroundPattern', 'headerBackgroundColor']);
+
+      // --- Pieces Subcollection ---
+      match /pieces/{pieceId} {
+        allow get: if isValidId(pieceId);
+        allow list: if true; // Constrained by the userId in the path
+        allow create: if isOwner(userId) && isValidPiece(incoming());
+        allow update: if isOwner(userId) && isValidPiece(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      // --- Guestbook Subcollection ---
+      match /guestbook/{entryId} {
+        allow get: if isValidId(entryId);
+        allow list: if true;
+        allow create: if isSignedIn() && isValidGuestbook(incoming())
+                      && incoming().authorId == request.auth.uid;
+        allow delete: if isOwner(userId) || (isSignedIn() && existing().authorId == request.auth.uid);
+      }
+    }
+
+    // --- Validation Helpers ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'username'])
+          && data.username is string && data.username.size() <= 32
+          && (data.get('bio', '') is string && data.get('bio', '').size() <= 500)
+          && (data.get('subtitle', '') is string && data.get('subtitle', '').size() <= 50)
+          && (data.get('avatarUrl', '') is string && data.get('avatarUrl', '').size() <= 1024)
+          && (data.get('backgroundColor', '') is string && data.get('backgroundColor', '').size() <= 32)
+          && (data.get('headerBackgroundColor', '') is string && data.get('headerBackgroundColor', '').size() <= 32)
+          && (data.get('backgroundPattern', 'none') is string && data.get('backgroundPattern', 'none') in ['none', 'dots', 'grid', 'lines'])
+          && data.uid == request.auth.uid;
+    }
+
+    function isValidPiece(data) {
+      return data.keys().hasAll(['type', 'data', 'style'])
+          && data.type in ['music', 'note', 'polaroid', 'decoration', 'guestbook', 'movie', 'top-movies', 'top-songs']
+          && data.data is map 
+          && data.style is map;
+    }
+
+    function isValidGuestbook(data) {
+      return data.keys().hasAll(['message', 'authorUsername', 'createdAt'])
+          && data.message is string && data.message.size() <= 280
+          && data.authorUsername is string && data.authorUsername.size() <= 32
+          && data.createdAt == request.time;
+    }
+  }
+}

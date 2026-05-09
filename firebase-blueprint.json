@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account and profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "username": { "type": "string" },
+        "bio": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "email": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "username"]
+    },
+    "ScrapbookPiece": {
+      "title": "Scrapbook Piece",
+      "description": "An individual item on a user's scrapbook page",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "type": { "type": "string", "enum": ["music", "note", "polaroid", "decoration", "guestbook"] },
+        "data": { "type": "object" },
+        "style": { "type": "object" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "type", "data"]
+    },
+    "GuestbookEntry": {
+      "title": "Guestbook Entry",
+      "description": "A message left on a user's scrapbook",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "targetUserId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "authorAvatarUrl": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["targetUserId", "authorUsername", "message"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/users/{userId}/pieces/{pieceId}": {
+      "schema": "ScrapbookPiece",
+      "description": "Content pieces for the user's scrapbook"
+    },
+    "/users/{userId}/guestbook/{entryId}": {
+      "schema": "GuestbookEntry",
+      "description": "Guestbook messages for the user"
+    }
+  }
+}
