@@ -74,23 +74,32 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
     return <div className="text-center py-20 italic">Archive deleted or never existed...</div>;
   }
 
-  const renderDraggablePiece = (piece: ScrapbookPieceData) => (
-    <motion.div
-      key={piece.id}
-      drag={isOwner}
-      dragMomentum={false}
-      onDragEnd={(_, info) => handleDragEnd(piece.id, info)}
-      whileDrag={{ scale: 1.05, zIndex: 100 }}
-      className={`${isOwner ? 'cursor-grab active:cursor-grabbing' : ''} h-fit`}
-      style={{
-        x: piece.style.x || 0,
-        y: piece.style.y || 0,
-        zIndex: piece.style.zIndex || 1
-      }}
-    >
-      {renderPiece(piece, userId)}
-    </motion.div>
-  );
+  const renderDraggablePiece = (piece: ScrapbookPieceData) => {
+    const scaleClasses = {
+      sm: 'scale-75 origin-top-left',
+      md: 'scale-100',
+      lg: 'scale-125'
+    };
+    const scaleClass = scaleClasses[(piece.style.size as 'sm'|'md'|'lg') || 'md'];
+
+    return (
+      <motion.div
+        key={piece.id}
+        drag={isOwner}
+        dragMomentum={false}
+        onDragEnd={(_, info) => handleDragEnd(piece.id, info)}
+        whileDrag={{ scale: 1.05, zIndex: 100 }}
+        className={`${isOwner ? 'cursor-grab active:cursor-grabbing' : ''} h-fit w-fit ${scaleClass}`}
+        style={{
+          x: piece.style.x || 0,
+          y: piece.style.y || 0,
+          zIndex: piece.style.zIndex || 1
+        }}
+      >
+        {renderPiece(piece, userId)}
+      </motion.div>
+    );
+  };
 
   const headerBgColor = profile.headerBackgroundColor || '#fffff8';
   const headerTextColor = getContrastText(headerBgColor);

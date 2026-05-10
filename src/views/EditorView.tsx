@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { db, storage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { ScrapbookPieceData } from '../types';
-import { Plus, Trash2, Save, Move } from 'lucide-react';
+import { Plus, Trash2, Save, Move, Upload, Search } from 'lucide-react';
 import { MusicWidget } from '../components/MusicWidget';
 import { NoteWidget } from '../components/NoteWidget';
 import { MovieWidget } from '../components/MovieWidget';
 import { Polaroid } from '../components/Polaroid';
 import { Decoration } from '../components/Decoration';
 import { TopListWidget } from '../components/TopListWidget';
+import { searchMovieDetails } from '../services/movieService';
 
 export function EditorView() {
   const { user, profile, updateProfile } = useAuth();
@@ -37,6 +39,7 @@ export function EditorView() {
   }, [user]);
 
   const handleSaveHeader = async () => {
+    if (!window.confirm("Save changes to profile and page settings?")) return;
     await updateProfile(headerState);
     setEditingHeader(false);
   };
@@ -75,6 +78,7 @@ export function EditorView() {
 
   const removePiece = async (pieceId: string) => {
     if (!user) return;
+    if (!window.confirm("Are you sure you want to delete this piece? This action cannot be undone.")) return;
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'pieces', pieceId));
     } catch (error) {
@@ -108,11 +112,49 @@ export function EditorView() {
     }
   };
 
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const sourceId = e.dataTransfer.getData('text/plain');
+    if (sourceId === targetId) return;
+
+    if (!user) return;
+    const sourceIndex = pieces.findIndex(p => p.id === sourceId);
+    const targetIndex = pieces.findIndex(p => p.id === targetId);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const newPieces = [...pieces];
+    const [moved] = newPieces.splice(sourceIndex, 1);
+    newPieces.splice(targetIndex, 0, moved);
+    
+    try {
+      await Promise.all(newPieces.map((piece, i) => 
+        updateDoc(doc(db, 'users', user!.uid, 'pieces', piece.id), {
+          'style.y': i * 10
+        })
+      ));
+    } catch (error) {
+       console.error("Error updating positions:", error);
+    }
+  };
+
   return (
     <>
       <div 
-        className="fixed inset-0 min-h-screen z-[-1] transition-colors duration-1000"
-        style={{ backgroundColor: profile?.backgroundColor || 'transparent' }}
+        className={`fixed inset-0 min-h-screen z-[-1] transition-colors duration-1000 ${
+          headerState.backgroundPattern === 'dots' ? 'bg-[url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'2\'/%3E%3C/g%3E%3C/svg%3E")]' :
+          headerState.backgroundPattern === 'grid' ? 'bg-[url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20z\' fill=\'%23000000\' fill-opacity=\'0.02\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")]' :
+          headerState.backgroundPattern === 'lines' ? 'bg-[url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v1H0z\' fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")]' :
+          ''
+        }`}
+        style={{ backgroundColor: headerState.backgroundColor || 'transparent' }}
       />
       <div className="max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop py-xl relative z-10 min-h-screen">
         <div className="flex justify-between items-center mb-xl">
@@ -130,10 +172,10 @@ export function EditorView() {
       {/* Header Editor */}
       <section className="bg-[#fffffb] p-lg border border-paper-outline mb-xl relative analog-shadow paper-edge">
         <div className="flex justify-between items-center mb-4 border-b-2 border-paper-outline/20 pb-4 mt-2">
-          <h2 className="font-serif text-3xl italic tracking-tight">Header Info</h2>
+          <h2 className="font-serif text-3xl italic tracking-tight">Profile & Page Settings</h2>
           {!editingHeader ? (
             <button onClick={() => setEditingHeader(true)} className="text-paper-ink border border-paper-outline px-3 py-1 hover:bg-paper-secondary hover:text-white transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-              <Plus size={12} /> Edit Header
+              <Plus size={12} /> Edit Settings
             </button>
           ) : (
             <div className="flex gap-2">
@@ -151,38 +193,47 @@ export function EditorView() {
         </div>
 
         {editingHeader ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-paper-outline/5 p-4 border border-dashed border-paper-outline/30 mt-2">
-            <EditorInput label="Username" value={headerState.username} onChange={v => setHeaderState(s => ({...s, username: v}))} />
-            <EditorInput label="Subtitle" value={headerState.subtitle} onChange={v => setHeaderState(s => ({...s, subtitle: v}))} />
-            <EditorInput label="Avatar URL" value={headerState.avatarUrl} onChange={v => setHeaderState(s => ({...s, avatarUrl: v}))} />
-            
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <EditorInput label="BG Color" value={headerState.backgroundColor} onChange={v => setHeaderState(s => ({...s, backgroundColor: v}))} type="color" />
+          <div className="space-y-6 bg-paper-outline/5 p-4 border border-dashed border-paper-outline/30 mt-2">
+            <div>
+              <h3 className="font-serif text-xl border-b border-paper-outline/20 pb-2 mb-4">Profile Info</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <EditorInput label="Username" value={headerState.username} onChange={v => setHeaderState(s => ({...s, username: v}))} />
+                <EditorInput label="Subtitle" value={headerState.subtitle} onChange={v => setHeaderState(s => ({...s, subtitle: v}))} />
+                <ImageUploadInput label="Avatar URL / Upload" value={headerState.avatarUrl} onChange={v => setHeaderState(s => ({...s, avatarUrl: v}))} />
+                <div className="col-span-full">
+                  <EditorInput label="Bio" value={headerState.bio} onChange={v => setHeaderState(s => ({...s, bio: v}))} isTextArea />
+                </div>
               </div>
-              <div className="flex-1">
-                <EditorInput label="Header BG Color" value={headerState.headerBackgroundColor} onChange={v => setHeaderState(s => ({...s, headerBackgroundColor: v}))} type="color" />
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-1 w-full justify-center">
-               <label className="text-[10px] font-bold uppercase tracking-wider text-paper-outline flex items-center justify-between">
-                 Background Pattern
-               </label>
-               <select
-                 value={headerState.backgroundPattern}
-                 onChange={e => setHeaderState(s => ({...s, backgroundPattern: e.target.value as any}))}
-                 className="w-full bg-transparent border-b-2 border-paper-outline pb-1 font-serif text-lg italic tracking-tight focus:outline-none focus:border-paper-ink transition-colors"
-               >
-                 <option value="none">None</option>
-                 <option value="dots">Dots</option>
-                 <option value="grid">Grid</option>
-                 <option value="lines">Lines</option>
-               </select>
             </div>
 
-            <div className="col-span-full">
-              <EditorInput label="Bio" value={headerState.bio} onChange={v => setHeaderState(s => ({...s, bio: v}))} isTextArea />
+            <div>
+               <h3 className="font-serif text-xl border-b border-paper-outline/20 pb-2 mb-4">Page Style</h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex gap-4 col-span-full">
+                    <div className="flex-1">
+                      <EditorInput label="Page BG Color" value={headerState.backgroundColor} onChange={v => setHeaderState(s => ({...s, backgroundColor: v}))} type="color" />
+                    </div>
+                    <div className="flex-1">
+                      <EditorInput label="Header BG Color" value={headerState.headerBackgroundColor} onChange={v => setHeaderState(s => ({...s, headerBackgroundColor: v}))} type="color" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1 col-span-full">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-paper-outline flex items-center justify-between">
+                      Page Background Pattern
+                    </label>
+                    <select
+                      value={headerState.backgroundPattern}
+                      onChange={e => setHeaderState(s => ({...s, backgroundPattern: e.target.value as any}))}
+                      className="w-full bg-transparent border-b-2 border-paper-outline pb-1 font-serif text-lg italic tracking-tight focus:outline-none focus:border-paper-ink transition-colors"
+                    >
+                      <option value="none">None</option>
+                      <option value="dots">Dots</option>
+                      <option value="grid">Grid</option>
+                      <option value="lines">Lines</option>
+                    </select>
+                  </div>
+               </div>
             </div>
           </div>
         ) : (
@@ -201,7 +252,14 @@ export function EditorView() {
       {/* Pieces List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
         {pieces.map(piece => (
-          <div key={piece.id} className="group relative bg-[#fffffb] border border-paper-outline p-4 flex flex-col gap-4 analog-shadow transition-all hover:-translate-y-1">
+          <div 
+            key={piece.id} 
+            draggable
+            onDragStart={(e) => handleDragStart(e, piece.id)}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, piece.id)}
+            className="group relative bg-[#fffffb] border border-paper-outline p-4 flex flex-col gap-4 analog-shadow transition-all hover:-translate-y-1 cursor-move"
+          >
             <div className="absolute top-2 right-2 z-50 flex gap-2">
                <button 
                  onClick={() => removePiece(piece.id)}
@@ -236,6 +294,14 @@ export function EditorView() {
               )}
               {piece.type === 'movie' && (
                 <>
+                  <MovieSearchInput onResult={(data) => {
+                    updatePieceData(piece.id, {
+                      title: data.title,
+                      year: data.year,
+                      rating: data.rating,
+                      posterUrl: data.posterUrl
+                    });
+                  }} />
                   <EditorInput label="Title" value={piece.data.title} onChange={v => updatePieceData(piece.id, {title: v})} />
                   <div className="grid grid-cols-2 gap-2">
                     <EditorInput label="Year" value={piece.data.year} onChange={v => updatePieceData(piece.id, {year: v})} />
@@ -265,7 +331,7 @@ export function EditorView() {
               )}
               {piece.type === 'polaroid' && (
                 <>
-                  <EditorInput label="Image URL" value={piece.data.src} onChange={v => updatePieceData(piece.id, {src: v})} />
+                  <ImageUploadInput label="Image URL / Upload" value={piece.data.src} onChange={v => updatePieceData(piece.id, {src: v})} />
                   <EditorInput label="Caption" value={piece.data.caption} onChange={v => updatePieceData(piece.id, {caption: v})} />
                 </>
               )}
@@ -335,6 +401,19 @@ export function EditorView() {
                         Full
                       </button>
                    </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                   <label className="text-[10px] font-bold uppercase">Size</label>
+                   <select 
+                     value={piece.style.size || 'md'}
+                     onChange={e => updatePieceStyle(piece.id, {size: e.target.value as any})}
+                     className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                   >
+                     <option value="sm">Small</option>
+                     <option value="md">Medium</option>
+                     <option value="lg">Large</option>
+                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -440,6 +519,122 @@ function EditorInput({ label, value, onChange, isTextArea, type = "text" }: { la
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function MovieSearchInput({ onResult }: { onResult: (data: { title: string; year: string; rating: string; posterUrl: string | null }) => void }) {
+  const [query, setQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async () => {
+    if (!query) return;
+    setIsSearching(true);
+    try {
+      const details = await searchMovieDetails(query);
+      if (details) {
+        onResult(details);
+        setQuery('');
+      } else {
+        alert("Movie not found");
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || "Error searching movie");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1 pb-4 mb-4 border-b border-paper-outline/30">
+      <label className="text-[10px] uppercase font-bold text-paper-outline">Search Movie (Auto-poupulate)</label>
+      <div className="flex gap-2">
+        <input 
+          type="text" 
+          value={query} 
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          className="bg-paper-base border border-paper-outline p-2 text-sm focus:outline-none flex-grow"
+          placeholder="e.g. Inception 2010"
+        />
+        <button 
+          onClick={handleSearch}
+          disabled={isSearching}
+          className="bg-paper-ink text-white px-3 py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 hover:bg-paper-ink/80 transition-colors disabled:opacity-50"
+        >
+          <Search size={14} />
+          {isSearching ? '...' : 'Search'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ImageUploadInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const storageRef = ref(storage, `images/${Date.now()}_${file.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setProgress(p);
+        }, 
+        (error) => {
+          console.error("Upload error:", error);
+          setIsUploading(false);
+          alert("Failed to upload image. " + error.message);
+        }, 
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          onChange(downloadURL);
+          setIsUploading(false);
+        }
+      );
+    } catch (error) {
+      console.error(error);
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[10px] uppercase font-bold text-paper-outline">{label}</label>
+      <div className="flex flex-col gap-2">
+        <input 
+          type="text" 
+          value={value} 
+          onChange={e => onChange(e.target.value)}
+          className="bg-paper-base border border-paper-outline p-2 text-sm focus:outline-none flex-grow"
+          placeholder="Enter image URL..."
+        />
+        <div className="relative">
+          <input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleUpload}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+            disabled={isUploading}
+          />
+          <button 
+            type="button" 
+            className="w-full bg-paper-tertiary/10 text-paper-ink border border-paper-outline border-dashed p-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-paper-tertiary/20 transition-colors"
+            disabled={isUploading}
+          >
+            <Upload size={14} />
+            {isUploading ? `Uploading ${Math.round(progress)}%` : 'Upload Image'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

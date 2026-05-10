@@ -23,7 +23,7 @@ export function Polaroid({ src, caption, rotation = 2, className, bgColor, fontF
       initial={{ opacity: 0, y: 20, rotate: rotation }}
       animate={{ opacity: 1, y: 0, rotate: rotation }}
       whileHover={{ scale: 1.05, rotate: 0, zIndex: 50, transition: { duration: 0.4 } }}
-      className={`p-3 pb-10 border ${borderClass} ${borderColor} analog-shadow relative mb-4 self-start group ${className} ${textColor} ${fontClass}`}
+      className={`p-3 pb-10 border-[3px] ${borderClass} ${borderColor} analog-shadow relative mb-4 self-start group ${className} ${textColor} ${fontClass}`}
       style={{ backgroundColor: bgColor || '#fffffb' }}
     >
       <Tape color="primary" rotation={-3} className="-top-3 left-1/2 -translate-x-1/2 w-14 h-5 opacity-80" />

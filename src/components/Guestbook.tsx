@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Edit2, Send, MessageSquare } from 'lucide-react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Edit2, Send, MessageSquare, Trash2 } from 'lucide-react';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Tape } from './Tape';
 import { useAuth } from '../lib/AuthContext';
@@ -36,6 +36,15 @@ export function Guestbook({ targetUserId, rotation = 1, bgColor, fontFamily, bor
       setEntries(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GuestbookEntry)));
     }, (error) => handleFirestoreError(error, OperationType.GET, `users/${targetUserId}/guestbook`));
   }, [targetUserId]);
+
+  const deleteEntry = async (entryId: string) => {
+    if (!window.confirm("Are you sure you want to delete this guestbook entry?")) return;
+    try {
+      await deleteDoc(doc(db, 'users', targetUserId, 'guestbook', entryId));
+    } catch (error) {
+       handleFirestoreError(error, OperationType.DELETE, `users/${targetUserId}/guestbook/${entryId}`);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +90,15 @@ export function Guestbook({ targetUserId, rotation = 1, bgColor, fontFamily, bor
                animate={{ opacity: 1, x: 0 }}
                className={`bg-white p-3 border border-paper-outline shadow-sm relative group hover:rotate-0 transition-transform text-paper-ink ${i % 2 === 0 ? '-rotate-1 self-start' : 'rotate-1 self-end w-[90%]'}`}
              >
+                {(user?.uid === targetUserId || user?.uid === entry.authorId) && (
+                  <button 
+                    onClick={() => deleteEntry(entry.id!)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    title="Delete Entry"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
                 <div className="flex gap-2 items-start text-xs">
                    {entry.authorAvatarUrl && (
                      <img src={entry.authorAvatarUrl} className="w-6 h-6 rounded-full border border-paper-outline" alt="" />
