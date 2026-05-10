@@ -11,6 +11,7 @@ import { Decoration } from '../components/Decoration';
 import { TopListWidget } from '../components/TopListWidget';
 import { UserProfile, ScrapbookPieceData } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import { Sparkles } from 'lucide-react';
 import { getContrastText, getContrastBorder } from '../lib/utils';
 
 interface ProfileViewProps {
@@ -82,6 +83,13 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
     };
     const scaleClass = scaleClasses[(piece.style.size as 'sm'|'md'|'lg') || 'md'];
 
+    const alignClasses = {
+      left: 'self-start justify-self-start',
+      center: 'self-center justify-self-center',
+      right: 'self-end justify-self-end'
+    };
+    const alignClass = alignClasses[(piece.style.align as 'left'|'center'|'right') || 'center'];
+
     return (
       <motion.div
         key={piece.id}
@@ -89,14 +97,14 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
         dragMomentum={false}
         onDragEnd={(_, info) => handleDragEnd(piece.id, info)}
         whileDrag={{ scale: 1.05, zIndex: 100 }}
-        className={`${isOwner ? 'cursor-grab active:cursor-grabbing' : ''} h-fit w-fit ${scaleClass}`}
+        className={`${isOwner ? 'cursor-grab active:cursor-grabbing' : ''} h-fit w-fit ${scaleClass} ${alignClass}`}
         style={{
           x: piece.style.x || 0,
           y: piece.style.y || 0,
           zIndex: piece.style.zIndex || 1
         }}
       >
-        {renderPiece(piece, userId)}
+        {renderPiece(piece, userId, theme)}
       </motion.div>
     );
   };
@@ -104,6 +112,29 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
   const headerBgColor = profile.headerBackgroundColor || '#fffff8';
   const headerTextColor = getContrastText(headerBgColor);
   const headerBorderColor = getContrastBorder(headerBgColor);
+  
+  const theme = profile.theme || 'retro';
+  
+  const themeClasses = {
+    retro: `border ${headerBorderColor} analog-shadow-lg paper-edge -rotate-1`,
+    minimal: `rounded-3xl border border-opacity-20 shadow-2xl backdrop-blur-md rotate-0`,
+    brutalist: `border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] uppercase tracking-wider rotate-0 rounded-none`,
+    y2k: `rounded-[2rem] border-2 border-pink-300 shadow-[0_0_20px_rgba(255,105,180,0.3)] bg-gradient-to-br from-white/40 to-white/10 backdrop-blur-lg rotate-0`
+  };
+  
+  const avatarThemeClasses = {
+    retro: `p-2 pb-8 border ${headerBorderColor} analog-shadow inline-block relative rotate-[-2deg]`,
+    minimal: `p-1 rounded-full border-4 border-white shadow-xl rotate-0`,
+    brutalist: `border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] rotate-0 rounded-none`,
+    y2k: `rounded-full border-4 border-purple-300 p-1 bg-gradient-to-tr from-pink-300 to-purple-300 rotate-0`
+  };
+  
+  const avatarImgClasses = {
+    retro: `w-32 h-32 md:w-40 md:h-40 object-cover grayscale contrast-125 sepia-[.2] transition-colors duration-700 hover:grayscale-0 hover:contrast-100 hover:sepia-0`,
+    minimal: `w-32 h-32 md:w-40 md:h-40 object-cover rounded-full`,
+    brutalist: `w-32 h-32 md:w-40 md:h-40 object-cover grayscale contrast-150`,
+    y2k: `w-32 h-32 md:w-40 md:h-40 object-cover rounded-full`
+  };
 
   return (
     <>
@@ -120,19 +151,31 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
       
       {/* Hero Section */}
       <section 
-        className={`relative self-center w-full max-w-2xl p-lg md:p-xl border ${headerBorderColor} analog-shadow-lg paper-edge -rotate-1 mt-md mb-xl z-20 transition-transform duration-500 hover:rotate-0 ${headerTextColor}`}
-        style={{ backgroundColor: headerBgColor }}
+        className={`relative self-center w-full max-w-2xl p-lg md:p-xl mt-md mb-xl z-20 transition-all duration-500 hover:rotate-0 ${headerTextColor} ${themeClasses[theme]}`}
+        style={{ backgroundColor: theme === 'y2k' ? undefined : headerBgColor }}
       >
-        <Tape color="secondary" rotation={-6} className="-top-3 -left-4 w-20 h-6 opacity-90" />
-        <Tape color="tertiary" rotation={3} className="-bottom-3 -right-4 w-16 h-5 opacity-80" />
+        {theme === 'retro' && (
+          <>
+            <Tape color="secondary" rotation={-6} className="-top-3 -left-4 w-20 h-6 opacity-90" />
+            <Tape color="tertiary" rotation={3} className="-bottom-3 -right-4 w-16 h-5 opacity-80" />
+          </>
+        )}
+
+        {theme === 'y2k' && (
+          <>
+            <div className="absolute top-2 right-4 text-purple-400 animate-pulse drop-shadow-[0_0_8px_rgba(255,105,180,0.8)]"><Sparkles size={32} /></div>
+            <div className="absolute top-1/2 -left-6 text-pink-400 animate-pulse delay-75 drop-shadow-[0_0_8px_rgba(255,105,180,0.8)]"><Sparkles size={24} /></div>
+            <div className="absolute bottom-4 right-1/4 text-fuchsia-400 animate-pulse delay-150 drop-shadow-[0_0_8px_rgba(255,105,180,0.8)]"><Sparkles size={28} /></div>
+          </>
+        )}
         
         <div className="flex flex-col md:flex-row items-center md:items-start gap-lg text-center md:text-left">
           <div className="flex-shrink-0 rotate-3 transition-transform duration-500 group">
-            <div className={`p-2 pb-8 border ${headerBorderColor} analog-shadow inline-block relative rotate-[-2deg] group-hover:rotate-0 transition-transform duration-500`} style={{ backgroundColor: headerBgColor }}>
-               <Tape color="primary" rotation={-5} className="-top-3 left-1/2 -translate-x-1/2 w-12 h-4 opacity-70" />
+            <div className={`${avatarThemeClasses[theme]} transition-transform duration-500 group-hover:rotate-0`} style={{ backgroundColor: theme === 'retro' ? headerBgColor : undefined }}>
+               {theme === 'retro' && <Tape color="primary" rotation={-5} className="-top-3 left-1/2 -translate-x-1/2 w-12 h-4 opacity-70" />}
               <img 
                 src={profile.avatarUrl || 'https://via.placeholder.com/150'} 
-                className="w-32 h-32 md:w-40 md:h-40 object-cover grayscale contrast-125 sepia-[.2] transition-colors duration-700 group-hover:grayscale-0 group-hover:contrast-100 group-hover:sepia-0" 
+                className={avatarImgClasses[theme]} 
                 alt="" 
               />
             </div>
@@ -140,17 +183,17 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
           
           <div className="flex flex-col gap-md flex-grow">
             <div>
-              <h1 className="font-serif text-3xl md:text-5xl">@{profile.username}</h1>
-              <p className={`font-mono text-lg italic opacity-60 ${headerTextColor}`}>{profile.subtitle}</p>
+              <h1 className={`${profile.titleFontFamily === 'sans' ? 'font-sans' : profile.titleFontFamily === 'mono' ? 'font-mono' : 'font-serif'} ${profile.titleFontSize === 'sm' ? 'text-2xl' : profile.titleFontSize === 'md' ? 'text-4xl' : profile.titleFontSize === 'xl' ? 'text-6xl md:text-8xl' : 'text-3xl md:text-5xl'} ${theme === 'brutalist' ? 'uppercase font-bold' : ''}`}>@{profile.username}</h1>
+              <p className={`${profile.fontFamily === 'serif' ? 'font-serif' : profile.fontFamily === 'sans' ? 'font-sans' : 'font-mono'} ${profile.fontSize === 'sm' ? 'text-sm' : profile.fontSize === 'lg' ? 'text-xl' : 'text-lg'} italic opacity-60 ${headerTextColor}`}>{profile.subtitle}</p>
             </div>
-            <p className="text-sm max-w-md">
+            <p className={`text-sm max-w-md ${profile.fontFamily === 'serif' ? 'font-serif' : profile.fontFamily === 'sans' ? 'font-sans' : 'font-mono'}`}>
               {profile.bio}
             </p>
             
             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-sm">
               {isOwner ? (
                 <>
-                  <button onClick={() => { window.history.pushState({}, '', '/editor'); window.dispatchEvent(new PopStateEvent('popstate')); }} className={`${headerTextColor === 'text-white' ? 'bg-white text-paper-ink border-white' : 'bg-paper-ink text-white border-paper-ink'} font-bold uppercase text-[12px] px-8 py-2 border hover:-translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,0.2)] transition-all flex items-center gap-2`}>
+                  <button onClick={() => { window.history.pushState({}, '', '/editor'); window.dispatchEvent(new PopStateEvent('popstate')); }} className={`${headerTextColor === 'text-paper-base' ? 'bg-white text-paper-ink border-white' : 'bg-paper-ink text-white border-paper-ink'} font-bold uppercase text-[12px] px-8 py-2 border hover:-translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,0.2)] transition-all flex items-center gap-2`}>
                     Enter Studio
                   </button>
                   <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/p/${userId}`); alert("Link copied to clipboard!"); }} className={`bg-transparent ${headerTextColor} font-bold uppercase text-[12px] px-6 py-2 border ${headerBorderColor} border-dashed hover:opacity-80 hover:rotate-1 transition-all`}>
@@ -159,7 +202,7 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
                 </>
               ) : (
                 <>
-                  <button className={`${headerTextColor === 'text-white' ? 'bg-white text-paper-ink border-white' : 'bg-paper-ink text-white border-paper-ink'} font-bold uppercase text-[12px] px-8 py-2 border hover:-translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,0.2)] transition-all flex items-center gap-2`}>
+                  <button className={`${headerTextColor === 'text-paper-base' ? 'bg-white text-paper-ink border-white' : 'bg-paper-ink text-white border-paper-ink'} font-bold uppercase text-[12px] px-8 py-2 border hover:-translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,0.2)] transition-all flex items-center gap-2`}>
                     Follow
                   </button>
                   <button className={`bg-transparent ${headerTextColor} font-bold uppercase text-[12px] px-6 py-2 border ${headerBorderColor} border-dashed hover:opacity-80 hover:rotate-1 transition-all`}>
@@ -212,24 +255,25 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
   );
 }
 
-function renderPiece(piece: ScrapbookPieceData, userId: string) {
+function renderPiece(piece: ScrapbookPieceData, userId: string, profileTheme: string) {
+  const pieceTheme = piece.data.theme || profileTheme;
   switch (piece.type) {
     case 'music':
       return <MusicWidget key={piece.id} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />;
     case 'note':
-      return <NoteWidget key={piece.id} {...piece.data} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />;
+      return <NoteWidget key={piece.id} {...piece.data} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'movie':
-      return <MovieWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />;
+      return <MovieWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'top-movies':
-      return <TopListWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} type="movies" rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />;
+      return <TopListWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} type="movies" rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'top-songs':
-      return <TopListWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} type="songs" rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />;
+      return <TopListWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} type="songs" rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'polaroid':
-      return <Polaroid key={piece.id} {...piece.data} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />;
+      return <Polaroid key={piece.id} {...piece.data} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'decoration':
-      return <Decoration key={piece.id} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} />;
+      return <Decoration key={piece.id} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} theme={pieceTheme as any} />;
     case 'guestbook':
-      return <Guestbook key={piece.id} targetUserId={userId} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />;
+      return <Guestbook key={piece.id} targetUserId={userId} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     default:
       return null;
   }

@@ -18,6 +18,8 @@ export interface ScrapbookPieceData {
     bgColor?: string;
     fontFamily?: 'sans' | 'serif' | 'mono';
     borderStyle?: 'solid' | 'dashed' | 'dotted';
+    align?: 'left' | 'center' | 'right';
+    size?: 'sm' | 'md' | 'lg';
   };
 }
 
@@ -31,6 +33,11 @@ export interface UserProfile {
   backgroundColor?: string;
   backgroundPattern?: 'none' | 'dots' | 'grid' | 'lines';
   headerBackgroundColor?: string;
+  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k';
+  titleFontFamily?: 'sans' | 'serif' | 'mono';
+  titleFontSize?: 'sm' | 'md' | 'lg' | 'xl';
+  fontFamily?: 'sans' | 'serif' | 'mono';
+  fontSize?: 'sm' | 'md' | 'lg';
 }
 
 export interface GuestbookEntry {

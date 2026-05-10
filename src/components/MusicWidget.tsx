@@ -1,4 +1,4 @@
-import { Play, SkipBack, SkipForward, Music, Disc } from 'lucide-react';
+import { Play, SkipBack, SkipForward, Music, Disc, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Tape } from './Tape';
 import { getContrastText, getContrastBorder } from '../lib/utils';
@@ -8,17 +8,28 @@ interface MusicWidgetProps {
   artist: string;
   albumArt?: string;
   rotation?: number;
-  design?: 'standard' | 'minimal' | 'cassette' | 'vinyl';
+  design?: 'standard' | 'minimal' | 'cassette' | 'vinyl' | 'y2k';
   color?: 'primary' | 'secondary' | 'tertiary' | 'yellow';
   bgColor?: string;
   fontFamily?: string;
   borderStyle?: string;
+  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k';
 }
 
-export function MusicWidget({ song, artist, albumArt, rotation = 2, design = 'standard', color = 'tertiary', bgColor, fontFamily, borderStyle }: MusicWidgetProps) {
+export function MusicWidget({ song, artist, albumArt, rotation = 2, design = 'standard', color = 'tertiary', bgColor, fontFamily, borderStyle, theme = 'retro' }: MusicWidgetProps) {
   const isCassette = design === 'cassette';
   const isVinyl = design === 'vinyl';
-  const isMinimal = design === 'minimal';
+  
+  // Design takes precedence over theme if it is a structural design like cassette or vinyl
+  const isStructuralDesign = isCassette || isVinyl;
+  
+  // Otherwise use the theme (or design if explicitly minimal/y2k for backward compatibility)
+  const activeStyle = isStructuralDesign ? design : (design === 'minimal' || design === 'y2k') ? design : theme;
+  
+  const isMinimal = activeStyle === 'minimal';
+  const isY2K = activeStyle === 'y2k';
+  const isBrutalist = activeStyle === 'brutalist';
+  const isRetro = activeStyle === 'retro';
   
   const textColor = getContrastText(bgColor);
   const borderColor = getContrastBorder(bgColor);
@@ -35,15 +46,30 @@ export function MusicWidget({ song, artist, albumArt, rotation = 2, design = 'st
         ${isCassette ? 'bg-paper-ink text-white p-4 rounded-sm border-2 border-paper-outline analog-shadow' : ''}
         ${isVinyl ? 'bg-[#111] text-white p-6 rounded-full aspect-square flex flex-col items-center justify-center border-4 border-[#222] shadow-[4px_4px_15px_rgba(0,0,0,0.3)]' : ''}
         ${isMinimal ? `bg-transparent border-l-2 ${borderClass} ${borderColor} p-2 ${textColor}` : ''}
-        ${design === 'standard' ? `border-2 ${borderClass} ${borderColor} p-md analog-shadow ${textColor}` : ''}
+        ${isY2K ? `p-md rounded-2xl border-2 border-fuchsia-400 bg-gradient-to-tr from-purple-500/20 to-pink-400/20 backdrop-blur-md shadow-[0_0_15px_rgba(232,121,249,0.3)] text-fuchsia-900 border-dashed` : ''}
+        ${isBrutalist ? `border-4 border-black p-4 shadow-[6px_6px_0_0_rgba(0,0,0,1)] uppercase font-bold text-black` : ''}
+        ${isRetro ? `border-2 ${borderClass} ${borderColor} p-md analog-shadow ${textColor}` : ''}
       `}
-      style={{ backgroundColor: design === 'standard' ? (bgColor || '#fdfcf8') : undefined }}
+      style={{ backgroundColor: (isRetro || isBrutalist || isMinimal) ? (bgColor || (isBrutalist ? '#fff' : '#fdfcf8')) : undefined }}
     >
-      {!isVinyl && !isMinimal && (
+      {!isVinyl && !isMinimal && !isY2K && (
         <Tape color={color} rotation={0} className="-top-3 left-1/2 -translate-x-1/2 w-12 h-5 opacity-80" />
       )}
       
-      {!isVinyl && !isMinimal && (
+      {isY2K && (
+        <div className="absolute -top-3 -right-3 text-pink-400 drop-shadow-[0_0_8px_rgba(255,105,180,0.8)] animate-pulse">
+           <Sparkles size={24} fill="currentColor" />
+        </div>
+      )}
+
+      {isY2K && (
+        <div className={`flex items-center justify-between border-b border-dashed border-fuchsia-300 pb-sm mb-sm opacity-80`}>
+          <span className="font-bold text-[10px] uppercase font-mono tracking-widest text-fuchsia-600">~* Now Playing *~</span>
+          <Music size={14} className="text-pink-500" />
+        </div>
+      )}
+
+      {!isVinyl && !isMinimal && !isY2K && (
         <div className={`flex items-center justify-between border-b border-dashed ${borderColor} pb-sm mb-sm opacity-60`}>
           <span className="font-bold text-[10px] uppercase">Now Playing</span>
           <Music size={14} />
@@ -53,7 +79,7 @@ export function MusicWidget({ song, artist, albumArt, rotation = 2, design = 'st
       <div className={`flex items-center gap-md ${isVinyl ? 'flex-col text-center' : ''}`}>
         <div className={`
           shrink-0 flex items-center justify-center
-          ${isVinyl ? 'w-32 h-32 rounded-full border-4 border-[#333] bg-[#000] relative' : `w-16 h-16 bg-white border ${borderColor}`}
+          ${isVinyl ? 'w-32 h-32 rounded-full border-4 border-[#333] bg-[#000] relative' : `w-16 h-16 bg-white border ${isY2K ? 'border-pink-300 rounded-lg shadow-inner' : borderColor}`}
           ${isCassette ? 'grayscale contrast-125' : ''}
         `}>
           {isVinyl && (

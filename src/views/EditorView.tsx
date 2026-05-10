@@ -11,6 +11,7 @@ import { MovieWidget } from '../components/MovieWidget';
 import { Polaroid } from '../components/Polaroid';
 import { Decoration } from '../components/Decoration';
 import { TopListWidget } from '../components/TopListWidget';
+import { Guestbook } from '../components/Guestbook';
 import { searchMovieDetails } from '../services/movieService';
 
 export function EditorView() {
@@ -28,6 +29,11 @@ export function EditorView() {
     backgroundColor: profile?.backgroundColor || '#f4f1ee',
     backgroundPattern: profile?.backgroundPattern || 'none',
     headerBackgroundColor: profile?.headerBackgroundColor || '#fffff8',
+    theme: profile?.theme || 'retro',
+    titleFontFamily: profile?.titleFontFamily || 'serif',
+    titleFontSize: profile?.titleFontSize || 'lg',
+    fontFamily: profile?.fontFamily || 'mono',
+    fontSize: profile?.fontSize || 'md',
   });
 
   useEffect(() => {
@@ -39,7 +45,6 @@ export function EditorView() {
   }, [user]);
 
   const handleSaveHeader = async () => {
-    if (!window.confirm("Save changes to profile and page settings?")) return;
     await updateProfile(headerState);
     setEditingHeader(false);
   };
@@ -78,7 +83,6 @@ export function EditorView() {
 
   const removePiece = async (pieceId: string) => {
     if (!user) return;
-    if (!window.confirm("Are you sure you want to delete this piece? This action cannot be undone.")) return;
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'pieces', pieceId));
     } catch (error) {
@@ -145,6 +149,69 @@ export function EditorView() {
     }
   };
 
+  const applyTemplate = async (templateName: string) => {
+    if (!user) return;
+    try {
+      let newHeaderState = { ...headerState };
+      let newPieces: any[] = [];
+
+      if (templateName === 'y2k-cyber') {
+        newHeaderState = {
+          ...newHeaderState,
+          theme: 'y2k',
+          backgroundColor: '#fcd5ce',
+          backgroundPattern: 'grid',
+          titleFontFamily: 'sans',
+          fontFamily: 'mono',
+          headerBackgroundColor: '#fae1dd'
+        };
+        newPieces = [
+          { type: 'music', data: { song: 'Pink Pony Club', artist: 'Chappell Roan', design: 'y2k', theme: 'y2k' }, style: { x: 0, y: 0, rotate: 2, zIndex: 1, column: 'left', size: 'lg' } },
+          { type: 'polaroid', data: { src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800', caption: 'Vibes', theme: 'y2k' }, style: { x: 0, y: 10, rotate: -4, zIndex: 2, column: 'right', size: 'lg' } },
+          { type: 'top-songs', data: { title: 'On Repeat', items: ['Cruel Summer', 'Good Luck, Babe!', 'Espresso'], theme: 'y2k' }, style: { x: 0, y: 20, rotate: 1, zIndex: 3, column: 'full', size: 'md' } },
+        ];
+      } else if (templateName === 'brutalist-dev') {
+        newHeaderState = {
+          ...newHeaderState,
+          theme: 'brutalist',
+          backgroundColor: '#ffffff',
+          backgroundPattern: 'none',
+          titleFontFamily: 'mono',
+          fontFamily: 'mono',
+          headerBackgroundColor: '#ffffff'
+        };
+        newPieces = [
+          { type: 'note', data: { title: 'TODO', items: ['Ship features', 'Fix bugs', 'Drink coffee'], design: 'list', theme: 'brutalist' }, style: { x: 0, y: 0, rotate: 0, zIndex: 1, column: 'left', size: 'md' } },
+          { type: 'decoration', data: { text: 'DO NOT DEPLOY ON FRIDAY', theme: 'brutalist', color: 'primary' }, style: { x: 0, y: 10, rotate: 0, zIndex: 2, column: 'right', size: 'lg' } },
+        ];
+      } else if (templateName === 'retro-film') {
+        newHeaderState = {
+          ...newHeaderState,
+          theme: 'retro',
+          backgroundColor: '#f4f1ee',
+          backgroundPattern: 'dots',
+          titleFontFamily: 'serif',
+          fontFamily: 'serif',
+          headerBackgroundColor: '#fffff8'
+        };
+        newPieces = [
+          { type: 'movie', data: { title: 'In the Mood for Love', year: '2000', rating: '8.1', posterUrl: null, theme: 'retro' }, style: { x: 0, y: 0, rotate: -2, zIndex: 1, column: 'left', size: 'lg' } },
+          { type: 'polaroid', data: { src: 'https://images.unsplash.com/photo-1478265409131-1f65c88f965c?q=80&w=800', caption: '35mm', theme: 'retro' }, style: { x: 0, y: 10, rotate: 3, zIndex: 2, column: 'right', size: 'md' } },
+        ];
+      }
+
+      await updateProfile(newHeaderState);
+      setHeaderState(newHeaderState);
+      
+      for (const piece of newPieces) {
+        await addDoc(collection(db, 'users', user.uid, 'pieces'), piece);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Failed to apply template.");
+    }
+  };
+
   return (
     <>
       <div 
@@ -162,7 +229,7 @@ export function EditorView() {
         <div className="flex gap-4">
            <button 
              onClick={() => setIsAdding(true)}
-             className="bg-paper-tertiary text-white px-4 py-2 flex items-center gap-2 hover:bg-paper-tertiary/80 transition-colors uppercase text-[12px] font-bold"
+             className="bg-paper-tertiary text-white px-4 py-2 flex items-center gap-2 hover:bg-paper-tertiary/90 hover:-translate-y-0.5 hover:shadow-md transition-all uppercase text-[12px] font-bold"
            >
              <Plus size={16} /> Add Piece
            </button>
@@ -174,18 +241,18 @@ export function EditorView() {
         <div className="flex justify-between items-center mb-4 border-b-2 border-paper-outline/20 pb-4 mt-2">
           <h2 className="font-serif text-3xl italic tracking-tight">Profile & Page Settings</h2>
           {!editingHeader ? (
-            <button onClick={() => setEditingHeader(true)} className="text-paper-ink border border-paper-outline px-3 py-1 hover:bg-paper-secondary hover:text-white transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+            <button onClick={() => setEditingHeader(true)} className="text-paper-ink border border-paper-outline px-3 py-1 hover:bg-paper-secondary hover:text-white hover:-translate-y-0.5 hover:shadow-sm transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
               <Plus size={12} /> Edit Settings
             </button>
           ) : (
             <div className="flex gap-2">
               <button 
                 onClick={() => setHeaderState(s => ({...s, backgroundColor: '#f4f1ee', headerBackgroundColor: '#fffff8', backgroundPattern: 'none'}))} 
-                className="text-paper-ink border border-paper-outline px-3 py-1 hover:bg-paper-outline/10 transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+                className="text-paper-ink border border-paper-outline px-3 py-1 hover:bg-paper-outline/10 hover:-translate-y-0.5 transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
               >
                 Reset Colors
               </button>
-              <button onClick={handleSaveHeader} className="text-white bg-paper-tertiary px-3 py-1 hover:bg-paper-ink transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider shadow-sm">
+              <button onClick={handleSaveHeader} className="text-white bg-paper-tertiary px-3 py-1 hover:bg-paper-ink hover:-translate-y-0.5 hover:shadow-sm transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider shadow-sm">
                 <Save size={12} /> Save Changes
               </button>
             </div>
@@ -209,6 +276,42 @@ export function EditorView() {
             <div>
                <h3 className="font-serif text-xl border-b border-paper-outline/20 pb-2 mb-4">Page Style</h3>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-paper-outline">Username Font</label>
+                    <select value={headerState.titleFontFamily} onChange={e => setHeaderState(s => ({...s, titleFontFamily: e.target.value as any}))} className="bg-paper-base border border-paper-outline text-xs p-2 focus:outline-none">
+                      <option value="sans">Sans-serif</option>
+                      <option value="serif">Serif</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-paper-outline">Username Size</label>
+                    <select value={headerState.titleFontSize} onChange={e => setHeaderState(s => ({...s, titleFontSize: e.target.value as any}))} className="bg-paper-base border border-paper-outline text-xs p-2 focus:outline-none">
+                      <option value="sm">Small</option>
+                      <option value="md">Medium</option>
+                      <option value="lg">Large</option>
+                      <option value="xl">Extra Large</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-paper-outline">Subtitle/Bio Font</label>
+                    <select value={headerState.fontFamily} onChange={e => setHeaderState(s => ({...s, fontFamily: e.target.value as any}))} className="bg-paper-base border border-paper-outline text-xs p-2 focus:outline-none">
+                      <option value="sans">Sans-serif</option>
+                      <option value="serif">Serif</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-paper-outline">Subtitle Size</label>
+                    <select value={headerState.fontSize} onChange={e => setHeaderState(s => ({...s, fontSize: e.target.value as any}))} className="bg-paper-base border border-paper-outline text-xs p-2 focus:outline-none">
+                      <option value="sm">Small</option>
+                      <option value="md">Medium</option>
+                      <option value="lg">Large</option>
+                    </select>
+                  </div>
+
                   <div className="flex gap-4 col-span-full">
                     <div className="flex-1">
                       <EditorInput label="Page BG Color" value={headerState.backgroundColor} onChange={v => setHeaderState(s => ({...s, backgroundColor: v}))} type="color" />
@@ -233,6 +336,22 @@ export function EditorView() {
                       <option value="lines">Lines</option>
                     </select>
                   </div>
+
+                  <div className="flex flex-col gap-1 col-span-full">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-paper-outline flex items-center justify-between">
+                      Profile Aesthetic Theme
+                    </label>
+                    <select
+                      value={headerState.theme}
+                      onChange={e => setHeaderState(s => ({...s, theme: e.target.value as any}))}
+                      className="w-full bg-transparent border-b-2 border-paper-outline pb-1 font-serif text-lg italic tracking-tight focus:outline-none focus:border-paper-ink transition-colors"
+                    >
+                      <option value="retro">Retro Polaroid</option>
+                      <option value="minimal">Minimal Modern</option>
+                      <option value="brutalist">Brutalist</option>
+                      <option value="y2k">Y2K Cyber</option>
+                    </select>
+                  </div>
                </div>
             </div>
           </div>
@@ -250,6 +369,30 @@ export function EditorView() {
       </section>
 
       {/* Pieces List */}
+      {pieces.length === 0 && (
+        <div className="bg-paper-outline/5 p-lg border border-dashed border-paper-outline text-center mb-xl">
+          <h2 className="font-serif text-3xl italic mb-4">Start with a Template</h2>
+          <p className="text-paper-outline mb-8 max-w-sm mx-auto">Choose a pre-designed layout to jumpstart your scrapbook, or start from scratch.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <button onClick={() => applyTemplate('retro-film')} className="p-6 border border-paper-outline bg-[#fffffb] text-paper-ink hover:-translate-y-1 hover:shadow-lg transition-all text-center analog-shadow group">
+              <div className="w-16 h-16 mx-auto mb-4 bg-[#f4f1ee] border-2 border-paper-outline rotate-2 group-hover:rotate-6 transition-transform flex items-center justify-center">📷</div>
+              <h3 className="font-serif text-xl italic mb-2">Retro Film</h3>
+              <p className="text-xs text-paper-outline">Polaroids, classic movies, and old-school vibes.</p>
+            </button>
+            <button onClick={() => applyTemplate('y2k-cyber')} className="p-6 border-2 border-pink-300 bg-gradient-to-br from-white to-pink-50 text-pink-900 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,105,180,0.4)] transition-all text-center rounded-3xl group">
+              <div className="w-16 h-16 mx-auto mb-4 bg-pink-100 rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">✨</div>
+              <h3 className="font-sans font-bold text-xl mb-2 text-pink-600">Y2K Cyber</h3>
+              <p className="text-xs text-pink-800/60">Bubblegum colors, pop music, and internet nostalgia.</p>
+            </button>
+            <button onClick={() => applyTemplate('brutalist-dev')} className="p-6 border-4 border-black bg-white text-black hover:-translate-y-1 hover:shadow-[8px_8px_0_0_rgba(0,0,0,1)] transition-all text-center uppercase font-bold group">
+              <div className="w-16 h-16 mx-auto mb-4 border-4 border-black flex items-center justify-center text-2xl group-hover:-rotate-12 transition-transform">⌨️</div>
+              <h3 className="font-mono text-xl mb-2">Brutalist Dev</h3>
+              <p className="text-xs text-black/60 font-mono">Monospace fonts, stark contrast, and raw elements.</p>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
         {pieces.map(piece => (
           <div 
@@ -288,6 +431,7 @@ export function EditorView() {
                       <option value="minimal">Minimal</option>
                       <option value="cassette">Tape Cassette</option>
                       <option value="vinyl">Vinyl Record</option>
+                      <option value="y2k">Y2K Cyber</option>
                     </select>
                   </div>
                 </>
@@ -403,6 +547,30 @@ export function EditorView() {
                    </div>
                 </div>
 
+                <div className="flex flex-col gap-1 col-span-full">
+                   <label className="text-[10px] font-bold uppercase">Alignment</label>
+                   <div className="flex gap-2">
+                      <button 
+                        onClick={() => updatePieceStyle(piece.id, {align: 'left'})}
+                        className={`flex-grow py-1 text-[10px] border ${(piece.style.align || 'center') === 'left' ? 'bg-paper-primary text-white border-paper-primary' : 'bg-white text-paper-ink border-paper-outline'}`}
+                      >
+                        Left
+                      </button>
+                      <button 
+                        onClick={() => updatePieceStyle(piece.id, {align: 'center'})}
+                        className={`flex-grow py-1 text-[10px] border ${(piece.style.align || 'center') === 'center' ? 'bg-paper-primary text-white border-paper-primary' : 'bg-white text-paper-ink border-paper-outline'}`}
+                      >
+                        Center
+                      </button>
+                      <button 
+                        onClick={() => updatePieceStyle(piece.id, {align: 'right'})}
+                        className={`flex-grow py-1 text-[10px] border ${(piece.style.align || 'center') === 'right' ? 'bg-paper-primary text-white border-paper-primary' : 'bg-white text-paper-ink border-paper-outline'}`}
+                      >
+                        Right
+                      </button>
+                   </div>
+                </div>
+
                 <div className="flex flex-col gap-1">
                    <label className="text-[10px] font-bold uppercase">Size</label>
                    <select 
@@ -441,20 +609,35 @@ export function EditorView() {
                      <option value="dotted">Dotted</option>
                    </select>
                 </div>
+
+                <div className="flex flex-col gap-1 col-span-full">
+                   <label className="text-[10px] font-bold uppercase">Widget Theme (Overrides Profile)</label>
+                   <select 
+                     value={piece.data.theme || ''}
+                     onChange={e => updatePieceData(piece.id, {theme: e.target.value as any})}
+                     className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                   >
+                     <option value="">Default (Use Profile Theme)</option>
+                     <option value="retro">Retro Polaroid</option>
+                     <option value="minimal">Minimal Modern</option>
+                     <option value="brutalist">Brutalist</option>
+                     <option value="y2k">Y2K Cyber</option>
+                   </select>
+                </div>
               </div>
             </div>
 
             <div className="mt-4 pt-4 border-t border-dashed border-paper-outline/30">
                <p className="text-[10px] italic text-paper-outline mb-2">Preview:</p>
-                <div className="scale-50 origin-top-left -mb-40 pointer-events-none">
-                  {piece.type === 'music' && <MusicWidget {...piece.data} rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />}
-                  {piece.type === 'movie' && <MovieWidget id={piece.id} userId={user?.uid} {...piece.data} rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />}
-                  {piece.type === 'top-movies' && <TopListWidget id={piece.id} userId={user?.uid} {...piece.data} type="movies" rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />}
-                  {piece.type === 'top-songs' && <TopListWidget id={piece.id} userId={user?.uid} {...piece.data} type="songs" rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />}
-                  {piece.type === 'note' && <NoteWidget {...piece.data} rotation={0} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />}
-                  {piece.type === 'polaroid' && <Polaroid {...piece.data} rotation={0} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />}
-                  {piece.type === 'decoration' && <Decoration {...piece.data} rotation={0} color={piece.style.color as any} />}
-                  {piece.type === 'guestbook' && <div className="bg-paper-tertiary/10 p-4 border border-dashed border-paper-outline w-[300px]">Guestbook Active</div>}
+                <div className="scale-75 origin-top-left -mb-20 pointer-events-none">
+                  {piece.type === 'music' && <MusicWidget {...piece.data} rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
+                  {piece.type === 'movie' && <MovieWidget id={piece.id} userId={user?.uid} {...piece.data} rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
+                  {piece.type === 'top-movies' && <TopListWidget id={piece.id} userId={user?.uid} {...piece.data} type="movies" rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
+                  {piece.type === 'top-songs' && <TopListWidget id={piece.id} userId={user?.uid} {...piece.data} type="songs" rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
+                  {piece.type === 'note' && <NoteWidget {...piece.data} rotation={0} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
+                  {piece.type === 'polaroid' && <Polaroid {...piece.data} rotation={0} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
+                  {piece.type === 'decoration' && <Decoration {...piece.data} rotation={0} color={piece.style.color as any} theme={piece.data.theme || headerState.theme as any} />}
+                  {piece.type === 'guestbook' && <Guestbook targetUserId={user?.uid!} rotation={0} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
                 </div>
             </div>
           </div>

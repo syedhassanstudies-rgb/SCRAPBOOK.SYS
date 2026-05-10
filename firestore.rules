@@ -23,7 +23,7 @@ service cloud.firestore {
       allow update: if isOwner(userId) 
                     && isValidUser(incoming())
                     && incoming().diff(existing()).affectedKeys()
-                        .hasOnly(['username', 'bio', 'subtitle', 'avatarUrl', 'isPublic', 'backgroundColor', 'backgroundPattern', 'headerBackgroundColor']);
+                        .hasOnly(['username', 'bio', 'subtitle', 'avatarUrl', 'isPublic', 'backgroundColor', 'backgroundPattern', 'headerBackgroundColor', 'theme', 'fontFamily', 'fontSize', 'titleFontFamily', 'titleFontSize']);
 
       // --- Pieces Subcollection ---
       match /pieces/{pieceId} {
