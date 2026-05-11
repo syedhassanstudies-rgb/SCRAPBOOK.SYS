@@ -646,26 +646,41 @@ export function EditorView() {
 
       {/* Add Piece Modal */}
       {isAdding && (
-        <div className="fixed inset-0 bg-paper-ink/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-paper-base border-2 border-paper-outline p-xl max-w-md w-full shadow-xl rotate-1">
-             <h2 className="font-serif text-3xl mb-lg italic border-b border-paper-outline pb-2">Add New Piece</h2>
-              <div className="grid grid-cols-2 gap-4">
-               {['music', 'top-songs', 'movie', 'top-movies', 'note', 'polaroid', 'decoration', 'guestbook'].map(type => (
+        <div className="fixed inset-0 bg-paper-ink/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={(e) => {
+          if (e.target === e.currentTarget) setIsAdding(false);
+        }}>
+          <div className="bg-paper-base border-2 border-paper-outline p-xl max-w-2xl w-full shadow-xl rotate-1 max-h-[80vh] overflow-y-auto">
+             <div className="flex justify-between items-center mb-lg border-b border-paper-outline pb-2">
+               <h2 className="font-serif text-3xl italic">Add New Piece</h2>
+               <button onClick={() => setIsAdding(false)} className="text-paper-outline hover:text-paper-ink transition-colors">✕</button>
+             </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               {[
+                 { type: 'music', icon: '🎧', title: 'Music Track', desc: 'A single song or album you are listening to' },
+                 { type: 'top-songs', icon: '🎵', title: 'Top Songs', desc: 'List your favorite tracks of the moment' },
+                 { type: 'movie', icon: '🎬', title: 'Movie Review', desc: 'Rate and review a recent watch' },
+                 { type: 'top-movies', icon: '🍿', title: 'Top Movies', desc: 'Curated list of cinema favorites' },
+                 { type: 'note', icon: '📝', title: 'Sticky Note', desc: 'Jot down thoughts, to-dos, or links' },
+                 { type: 'polaroid', icon: '📷', title: 'Polaroid', desc: 'A photo memory with an optional caption' },
+                 { type: 'guestbook', icon: '📖', title: 'Guestbook', desc: 'Let visitors leave a note on your page' },
+                 { type: 'decoration', icon: '✨', title: 'Decoration', desc: 'Sparkles, stickers, and little details' },
+               ].map(item => (
                  <button 
-                   key={type}
-                   onClick={() => addPiece(type as any)}
-                   className="p-4 border border-paper-outline hover:bg-paper-secondary hover:text-white transition-all uppercase text-[10px] font-bold tracking-widest text-center"
+                   key={item.type}
+                   onClick={() => {
+                     addPiece(item.type as any);
+                     setIsAdding(false);
+                   }}
+                   className="p-4 border border-paper-outline hover:bg-paper-secondary hover:text-white transition-all text-left flex items-start gap-4 group"
                  >
-                   {type.replace('-', ' ')}
+                   <div className="text-2xl group-hover:scale-110 transition-transform">{item.icon}</div>
+                   <div>
+                     <h3 className="font-bold uppercase text-[12px] tracking-widest mb-1 group-hover:text-white">{item.title}</h3>
+                     <p className="text-xs text-paper-outline group-hover:text-white/80">{item.desc}</p>
+                   </div>
                  </button>
                ))}
               </div>
-             <button 
-               onClick={() => setIsAdding(false)}
-               className="mt-8 w-full text-center text-xs text-paper-outline hover:underline"
-             >
-               Nevermind
-             </button>
           </div>
         </div>
       )}
@@ -731,7 +746,7 @@ function MovieSearchInput({ onResult }: { onResult: (data: { title: string; year
 
   return (
     <div className="flex flex-col gap-1 pb-4 mb-4 border-b border-paper-outline/30">
-      <label className="text-[10px] uppercase font-bold text-paper-outline">Search Movie (Auto-poupulate)</label>
+      <label className="text-[10px] uppercase font-bold text-paper-outline">Search Movie (Auto-populate)</label>
       <div className="flex gap-2">
         <input 
           type="text" 

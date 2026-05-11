@@ -39,7 +39,11 @@ export function MovieWidget({ id, userId, title, rating, year, rotation = -2, co
   };
 
   useEffect(() => {
-    if (!initialPosterUrl && title && title !== 'Movie Title') {
+    if (initialPosterUrl) {
+      setPosterUrl(initialPosterUrl);
+      setLoading(false);
+    } else if (title && title !== 'Movie Title') {
+      setLoading(true);
       findMoviePoster(title, year).then(async (url) => {
         setPosterUrl(url);
         setLoading(false);

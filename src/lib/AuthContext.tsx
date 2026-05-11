@@ -32,10 +32,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Initialize profile
             const newProfile: Profile = {
               uid: user.uid,
-              username: user.displayName?.toLowerCase().replace(/\s+/g, '') || `user_${user.uid.slice(0, 5)}`,
+              username: (user.displayName?.toLowerCase().replace(/[^a-z0-9]/g, '') || `user_${user.uid.slice(0, 5)}`).slice(0, 32),
               bio: 'Documenting the mundane & the magical.',
               subtitle: 'Creative Soul',
-              avatarUrl: user.photoURL || '',
+              avatarUrl: user.photoURL?.slice(0, 1024) || '',
               isPublic: true,
             };
             setDoc(profileRef, newProfile).catch(e => handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}`));

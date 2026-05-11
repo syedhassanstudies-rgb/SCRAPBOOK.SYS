@@ -23,6 +23,7 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [pieces, setPieces] = useState<ScrapbookPieceData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -196,8 +197,12 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
                   <button onClick={() => { window.history.pushState({}, '', '/editor'); window.dispatchEvent(new PopStateEvent('popstate')); }} className={`${headerTextColor === 'text-paper-base' ? 'bg-white text-paper-ink border-white' : 'bg-paper-ink text-white border-paper-ink'} font-bold uppercase text-[12px] px-8 py-2 border hover:-translate-y-1 hover:shadow-[2px_2px_0_0_rgba(0,0,0,0.2)] transition-all flex items-center gap-2`}>
                     Enter Studio
                   </button>
-                  <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/p/${userId}`); alert("Link copied to clipboard!"); }} className={`bg-transparent ${headerTextColor} font-bold uppercase text-[12px] px-6 py-2 border ${headerBorderColor} border-dashed hover:opacity-80 hover:rotate-1 transition-all`}>
-                    Share Link
+                  <button onClick={() => { 
+                    navigator.clipboard.writeText(`${window.location.origin}/p/${userId}`); 
+                    setIsCopied(true);
+                    setTimeout(() => setIsCopied(false), 2000);
+                  }} className={`bg-transparent ${headerTextColor} font-bold uppercase text-[12px] px-6 py-2 border ${headerBorderColor} border-dashed hover:opacity-80 hover:rotate-1 transition-all flex items-center justify-center min-w-[120px]`}>
+                    {isCopied ? 'Copied!' : 'Share Link'}
                   </button>
                 </>
               ) : (
