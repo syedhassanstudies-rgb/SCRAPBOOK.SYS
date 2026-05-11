@@ -18,7 +18,9 @@ import { searchSpotifyTrack } from '../services/spotifyService';
 export function EditorView() {
   const { user, profile, updateProfile } = useAuth();
   const [pieces, setPieces] = useState<ScrapbookPieceData[]>([]);
+  const [piecesLoading, setPiecesLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
   const [editingHeader, setEditingHeader] = useState(false);
   
   // Header state
@@ -42,7 +44,11 @@ export function EditorView() {
     const q = query(collection(db, 'users', user.uid, 'pieces'), orderBy('style.y', 'asc'));
     return onSnapshot(q, (snapshot) => {
       setPieces(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ScrapbookPieceData)));
-    }, (error) => handleFirestoreError(error, OperationType.GET, `users/${user.uid}/pieces`));
+      setPiecesLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `users/${user.uid}/pieces`);
+      setPiecesLoading(false);
+    });
   }, [user]);
 
   const handleSaveHeader = async () => {
@@ -151,7 +157,8 @@ export function EditorView() {
   };
 
   const applyTemplate = async (templateName: string) => {
-    if (!user) return;
+    if (!user || applyingTemplate) return;
+    setApplyingTemplate(true);
     try {
       let newHeaderState = { ...headerState };
       let newPieces: any[] = [];
@@ -204,12 +211,13 @@ export function EditorView() {
       await updateProfile(newHeaderState);
       setHeaderState(newHeaderState);
       
-      for (const piece of newPieces) {
-        await addDoc(collection(db, 'users', user.uid, 'pieces'), piece);
-      }
+      const piecesCollection = collection(db, 'users', user.uid, 'pieces');
+      await Promise.all(newPieces.map(p => addDoc(piecesCollection, p)));
     } catch (e) {
       console.error(e);
       alert("Failed to apply template.");
+    } finally {
+      setApplyingTemplate(false);
     }
   };
 
@@ -371,27 +379,46 @@ export function EditorView() {
       </section>
 
       {/* Pieces List */}
-      {pieces.length === 0 && (
+      {!piecesLoading && pieces.length === 0 && (
         <div className="bg-paper-outline/5 p-lg border border-dashed border-paper-outline text-center mb-xl">
           <h2 className="font-serif text-3xl italic mb-4">Start with a Template</h2>
-          <p className="text-paper-outline mb-8 max-w-sm mx-auto">Choose a pre-designed layout to jumpstart your scrapbook, or start from scratch.</p>
+          <p className="text-paper-outline mb-8 max-w-sm mx-auto font-mono text-sm">Choose a pre-designed layout to jumpstart your scrapbook, or start from scratch.</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <button onClick={() => applyTemplate('retro-film')} className="p-6 border border-paper-outline bg-[#fffffb] text-paper-ink hover:-translate-y-1 hover:shadow-lg transition-all text-center analog-shadow group">
+            <button 
+              disabled={applyingTemplate}
+              onClick={() => applyTemplate('retro-film')} 
+              className="p-6 border border-paper-outline bg-[#fffffb] text-paper-ink hover:-translate-y-1 hover:shadow-lg transition-all text-center analog-shadow group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <div className="w-16 h-16 mx-auto mb-4 bg-[#f4f1ee] border-2 border-paper-outline rotate-2 group-hover:rotate-6 transition-transform flex items-center justify-center">📷</div>
-              <h3 className="font-serif text-xl italic mb-2">Retro Film</h3>
-              <p className="text-xs text-paper-outline">Polaroids, classic movies, and old-school vibes.</p>
+              <h3 className="font-serif text-xl italic mb-2 tracking-tight">{applyingTemplate ? 'Working...' : 'Retro Film'}</h3>
+              <p className="text-xs text-paper-outline font-mono">Polaroids, classic movies, and old-school vibes.</p>
             </button>
-            <button onClick={() => applyTemplate('y2k-cyber')} className="p-6 border-2 border-pink-300 bg-gradient-to-br from-white to-pink-50 text-pink-900 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,105,180,0.4)] transition-all text-center rounded-3xl group">
+            <button 
+              disabled={applyingTemplate}
+              onClick={() => applyTemplate('y2k-cyber')} 
+              className="p-6 border-2 border-pink-300 bg-gradient-to-br from-white to-pink-50 text-pink-900 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,105,180,0.4)] transition-all text-center rounded-3xl group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <div className="w-16 h-16 mx-auto mb-4 bg-pink-100 rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">✨</div>
-              <h3 className="font-sans font-bold text-xl mb-2 text-pink-600">Y2K Cyber</h3>
-              <p className="text-xs text-pink-800/60">Bubblegum colors, pop music, and internet nostalgia.</p>
+              <h3 className="font-sans font-bold text-xl mb-2 text-pink-600 uppercase tracking-tighter">{applyingTemplate ? 'Working...' : 'Y2K Cyber'}</h3>
+              <p className="text-xs text-pink-800/60 font-mono">Bubblegum colors, pop music, and internet nostalgia.</p>
             </button>
-            <button onClick={() => applyTemplate('brutalist-dev')} className="p-6 border-4 border-black bg-white text-black hover:-translate-y-1 hover:shadow-[8px_8px_0_0_rgba(0,0,0,1)] transition-all text-center uppercase font-bold group">
+            <button 
+              disabled={applyingTemplate}
+              onClick={() => applyTemplate('brutalist-dev')} 
+              className="p-6 border-4 border-black bg-white text-black hover:-translate-y-1 hover:shadow-[8px_8px_0_0_rgba(0,0,0,1)] transition-all text-center uppercase font-bold group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <div className="w-16 h-16 mx-auto mb-4 border-4 border-black flex items-center justify-center text-2xl group-hover:-rotate-12 transition-transform">⌨️</div>
-              <h3 className="font-mono text-xl mb-2">Brutalist Dev</h3>
+              <h3 className="font-mono text-xl mb-2 tracking-tighter">{applyingTemplate ? 'Working...' : 'Brutalist Dev'}</h3>
               <p className="text-xs text-black/60 font-mono">Monospace fonts, stark contrast, and raw elements.</p>
             </button>
           </div>
+        </div>
+      )}
+
+      {piecesLoading && (
+        <div className="h-64 flex flex-col items-center justify-center gap-4 opacity-50">
+          <div className="w-8 h-8 border-2 border-dashed border-paper-ink rounded-full animate-spin" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Loading Archive...</span>
         </div>
       )}
 

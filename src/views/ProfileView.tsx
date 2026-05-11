@@ -265,7 +265,7 @@ function renderPiece(piece: ScrapbookPieceData, userId: string, profileTheme: st
   const pieceTheme = piece.data.theme || profileTheme;
   switch (piece.type) {
     case 'music':
-      return <MusicWidget key={piece.id} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} />;
+      return <MusicWidget key={piece.id} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'note':
       return <NoteWidget key={piece.id} {...piece.data} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'movie':
