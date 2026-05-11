@@ -1,6 +1,7 @@
 import { useAuth } from '../lib/AuthContext';
 import { Home, Compass, User, Settings, LogOut, LogIn } from 'lucide-react';
 import { motion } from 'motion/react';
+import { GlobalSearch } from './GlobalSearch';
 
 export function Navigation() {
   const { user, profile, signIn, signOut } = useAuth();
@@ -29,7 +30,8 @@ export function Navigation() {
             <NavLink onClick={(e) => handleClick(e, '/editor')} active={window.location.pathname === '/editor'} icon={<Settings size={16} />}>Studio</NavLink>
           </nav>
 
-          <div className="flex gap-4 ml-auto">
+          <div className="flex gap-4 ml-auto items-center">
+            <GlobalSearch />
             {user ? (
                <button onClick={signOut} className="flex gap-2 items-center px-4 py-2 hover:bg-paper-outline/10 transition-colors uppercase font-bold text-[10px] tracking-widest border border-transparent hover:border-paper-outline/20">
                   <LogOut size={16} /> Sign Out

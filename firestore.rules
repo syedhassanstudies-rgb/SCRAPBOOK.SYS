@@ -13,6 +13,10 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     
+    match /{path=**}/pieces/{pieceId} {
+      allow read: if true;
+    }
+
     // --- Users Collection ---
     match /users/{userId} {
       allow get: if true;

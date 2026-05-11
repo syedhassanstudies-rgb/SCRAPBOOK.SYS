@@ -13,6 +13,7 @@ import { Decoration } from '../components/Decoration';
 import { TopListWidget } from '../components/TopListWidget';
 import { Guestbook } from '../components/Guestbook';
 import { searchMovieDetails } from '../services/movieService';
+import { searchSpotifyTrack } from '../services/spotifyService';
 
 export function EditorView() {
   const { user, profile, updateProfile } = useAuth();
@@ -215,13 +216,14 @@ export function EditorView() {
   return (
     <>
       <div 
-        className={`fixed inset-0 min-h-screen z-[-1] transition-colors duration-1000 ${
-          headerState.backgroundPattern === 'dots' ? 'bg-[url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'2\'/%3E%3C/g%3E%3C/svg%3E")]' :
-          headerState.backgroundPattern === 'grid' ? 'bg-[url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20z\' fill=\'%23000000\' fill-opacity=\'0.02\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")]' :
-          headerState.backgroundPattern === 'lines' ? 'bg-[url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v1H0z\' fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")]' :
-          ''
-        }`}
-        style={{ backgroundColor: headerState.backgroundColor || 'transparent' }}
+        className="fixed inset-0 min-h-screen z-[-1] transition-colors duration-1000"
+        style={{ 
+          backgroundColor: headerState.backgroundColor || 'transparent',
+          backgroundImage: headerState.backgroundPattern === 'dots' ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'2\'/%3E%3C/g%3E%3C/svg%3E")' :
+                           headerState.backgroundPattern === 'grid' ? 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20z\' fill=\'%23000000\' fill-opacity=\'0.02\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' :
+                           headerState.backgroundPattern === 'lines' ? 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v1H0z\' fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' :
+                           'none'
+        }}
       />
       <div className="max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop py-xl relative z-10 min-h-screen">
         <div className="flex justify-between items-center mb-xl">
@@ -418,8 +420,16 @@ export function EditorView() {
               
               {piece.type === 'music' && (
                 <>
+                  <MusicSearchInput onResult={(data) => {
+                    updatePieceData(piece.id, {
+                      song: data.song,
+                      artist: data.artist,
+                      albumArt: data.albumArt || undefined
+                    });
+                  }} />
                   <EditorInput label="Song" value={piece.data.song} onChange={v => updatePieceData(piece.id, {song: v})} />
                   <EditorInput label="Artist" value={piece.data.artist} onChange={v => updatePieceData(piece.id, {artist: v})} />
+                  <EditorInput label="Album Art URL (Optional)" value={piece.data.albumArt || ''} onChange={v => updatePieceData(piece.id, {albumArt: v})} />
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold uppercase">Design Style</label>
                     <select 
@@ -428,10 +438,10 @@ export function EditorView() {
                       className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
                     >
                       <option value="standard">Standard</option>
-                      <option value="minimal">Minimal</option>
                       <option value="cassette">Tape Cassette</option>
                       <option value="vinyl">Vinyl Record</option>
-                      <option value="y2k">Y2K Cyber</option>
+                      <option value="cd">CD</option>
+                      <option value="mini-disc">Mini Disc</option>
                     </select>
                   </div>
                 </>
@@ -450,6 +460,20 @@ export function EditorView() {
                   <div className="grid grid-cols-2 gap-2">
                     <EditorInput label="Year" value={piece.data.year} onChange={v => updatePieceData(piece.id, {year: v})} />
                     <EditorInput label="Rating" value={piece.data.rating} onChange={v => updatePieceData(piece.id, {rating: v})} />
+                  </div>
+                  <EditorInput label="Poster URL (Optional)" value={piece.data.posterUrl || ''} onChange={v => updatePieceData(piece.id, {posterUrl: v})} />
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase">Design Style</label>
+                    <select 
+                      value={piece.data.design || 'standard'}
+                      onChange={e => updatePieceData(piece.id, {design: e.target.value})}
+                      className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                    >
+                      <option value="standard">Standard Cover</option>
+                      <option value="vhs">VHS Cassette</option>
+                      <option value="dvd">DVD Disc</option>
+                      <option value="film-strip">Film Strip</option>
+                    </select>
                   </div>
                 </>
               )}
@@ -630,7 +654,7 @@ export function EditorView() {
             <div className="mt-4 pt-4 border-t border-dashed border-paper-outline/30">
                <p className="text-[10px] italic text-paper-outline mb-2">Preview:</p>
                 <div className="scale-75 origin-top-left -mb-20 pointer-events-none">
-                  {piece.type === 'music' && <MusicWidget {...piece.data} rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
+                  {piece.type === 'music' && <MusicWidget id={piece.id} userId={user?.uid} {...piece.data} rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
                   {piece.type === 'movie' && <MovieWidget id={piece.id} userId={user?.uid} {...piece.data} rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
                   {piece.type === 'top-movies' && <TopListWidget id={piece.id} userId={user?.uid} {...piece.data} type="movies" rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
                   {piece.type === 'top-songs' && <TopListWidget id={piece.id} userId={user?.uid} {...piece.data} type="songs" rotation={0} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={piece.data.theme || headerState.theme as any} />}
@@ -755,6 +779,54 @@ function MovieSearchInput({ onResult }: { onResult: (data: { title: string; year
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
           className="bg-paper-base border border-paper-outline p-2 text-sm focus:outline-none flex-grow"
           placeholder="e.g. Inception 2010"
+        />
+        <button 
+          onClick={handleSearch}
+          disabled={isSearching}
+          className="bg-paper-ink text-white px-3 py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 hover:bg-paper-ink/80 transition-colors disabled:opacity-50"
+        >
+          <Search size={14} />
+          {isSearching ? '...' : 'Search'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MusicSearchInput({ onResult }: { onResult: (data: { song: string; artist: string; albumArt: string | null }) => void }) {
+  const [query, setQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async () => {
+    if (!query) return;
+    setIsSearching(true);
+    try {
+      const details = await searchSpotifyTrack(query);
+      if (details) {
+        onResult(details);
+        setQuery('');
+      } else {
+        alert("Track not found or API not configured.");
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || "Error searching track");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1 pb-4 mb-4 border-b border-paper-outline/30">
+      <label className="text-[10px] uppercase font-bold text-paper-outline">Search Spotify (Auto-populate)</label>
+      <div className="flex gap-2">
+        <input 
+          type="text" 
+          value={query} 
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          className="bg-paper-base border border-paper-outline p-2 text-sm focus:outline-none flex-grow"
+          placeholder="e.g. Pink Pony Club"
         />
         <button 
           onClick={handleSearch}
