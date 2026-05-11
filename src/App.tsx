@@ -48,7 +48,7 @@ function AppContent() {
     }
     if (path.startsWith('/p/')) {
       const userId = path.split('/')[2];
-      return <ProfileView userId={userId} />;
+      return <ProfileView userId={userId} isOwner={user?.uid === userId} />;
     }
     return <DiscoveryView onNavigate={navigate} />;
   };

@@ -23,6 +23,15 @@ export function DiscoveryView({ onNavigate }: { onNavigate?: (path: string) => v
     fetchProfiles();
   }, []);
 
+  const handleProfileClick = (uid: string) => {
+    if (onNavigate) {
+      onNavigate(`/p/${uid}`);
+    } else {
+      window.history.pushState({}, '', `/p/${uid}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop py-xl">
       <div className="mb-xl text-center md:text-left relative">
@@ -46,7 +55,7 @@ export function DiscoveryView({ onNavigate }: { onNavigate?: (path: string) => v
             <div 
               key={profile.uid} 
               className="cursor-pointer group"
-              onClick={() => onNavigate?.(`/p/${profile.uid}`)}
+              onClick={() => handleProfileClick(profile.uid)}
             >
               <Polaroid 
                 src={profile.avatarUrl || 'https://via.placeholder.com/300x400'} 
