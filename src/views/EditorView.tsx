@@ -13,8 +13,8 @@ import { Polaroid } from '../components/Polaroid';
 import { Decoration } from '../components/Decoration';
 import { TopListWidget } from '../components/TopListWidget';
 import { Guestbook } from '../components/Guestbook';
-import { searchMovieDetails } from '../services/movieService';
-import { searchSpotifyTrack } from '../services/spotifyService';
+import { searchMovieDetails, searchMovieResults } from '../services/movieService';
+import { searchSpotifyTrack, searchSpotifyResults } from '../services/spotifyService';
 
 export function EditorView() {
   const { user, profile, updateProfile } = useAuth();
@@ -452,6 +452,7 @@ export function EditorView() {
                     updatePieceData(piece.id, {
                       song: data.song,
                       artist: data.artist,
+                      genre: data.genre || undefined,
                       albumArt: data.albumArt || undefined,
                       previewUrl: data.previewUrl || undefined,
                       trackId: data.trackId || undefined
@@ -459,6 +460,7 @@ export function EditorView() {
                   }} />
                   <EditorInput label="Song" value={piece.data.song} onChange={v => updatePieceData(piece.id, {song: v})} />
                   <EditorInput label="Artist" value={piece.data.artist} onChange={v => updatePieceData(piece.id, {artist: v})} />
+                  <EditorInput label="Genre (Optional)" value={piece.data.genre || ''} onChange={v => updatePieceData(piece.id, {genre: v})} />
                   <EditorInput label="Album Art URL (Optional)" value={piece.data.albumArt || ''} onChange={v => updatePieceData(piece.id, {albumArt: v})} />
                   <EditorInput label="Spotify Preview URL (Optional)" value={piece.data.previewUrl || ''} onChange={v => updatePieceData(piece.id, {previewUrl: v})} />
                   <div className="flex flex-col gap-1">
@@ -485,6 +487,7 @@ export function EditorView() {
                       title: data.title,
                       year: data.year,
                       rating: data.rating,
+                      genre: data.genre,
                       posterUrl: data.posterUrl
                     });
                   }} />
@@ -493,6 +496,7 @@ export function EditorView() {
                     <EditorInput label="Year" value={piece.data.year} onChange={v => updatePieceData(piece.id, {year: v})} />
                     <EditorInput label="Rating" value={piece.data.rating} onChange={v => updatePieceData(piece.id, {rating: v})} />
                   </div>
+                  <EditorInput label="Genre" value={piece.data.genre || ''} onChange={v => updatePieceData(piece.id, {genre: v})} />
                   <EditorInput label="Poster URL (Optional)" value={piece.data.posterUrl || ''} onChange={v => updatePieceData(piece.id, {posterUrl: v})} />
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold uppercase">Design Style</label>
@@ -777,18 +781,19 @@ function EditorInput({ label, value, onChange, isTextArea, type = "text" }: { la
   );
 }
 
-function MovieSearchInput({ onResult }: { onResult: (data: { title: string; year: string; rating: string; posterUrl: string | null }) => void }) {
+function MovieSearchInput({ onResult }: { onResult: (data: { title: string; year: string; rating: string; posterUrl: string | null; genre: string }) => void }) {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [results, setResults] = useState<{ title: string; year: string; rating: string; posterUrl: string | null; genre: string }[]>([]);
 
   const handleSearch = async () => {
     if (!query) return;
     setIsSearching(true);
+    setResults([]);
     try {
-      const details = await searchMovieDetails(query);
-      if (details) {
-        onResult(details);
-        setQuery('');
+      const searchRes = await searchMovieResults(query);
+      if (searchRes && searchRes.length > 0) {
+        setResults(searchRes);
       } else {
         alert("Movie not found");
       }
@@ -801,7 +806,7 @@ function MovieSearchInput({ onResult }: { onResult: (data: { title: string; year
   };
 
   return (
-    <div className="flex flex-col gap-1 pb-4 mb-4 border-b border-paper-outline/30">
+    <div className="flex flex-col gap-1 pb-4 mb-4 border-b border-paper-outline/30 relative z-50">
       <label className="text-[10px] uppercase font-bold text-paper-outline">Search Movie (Auto-populate)</label>
       <div className="flex gap-2">
         <input 
@@ -821,22 +826,44 @@ function MovieSearchInput({ onResult }: { onResult: (data: { title: string; year
           {isSearching ? '...' : 'Search'}
         </button>
       </div>
+      {results.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-black shadow-[4px_4px_0_0_#000] z-50 max-h-60 overflow-y-auto">
+          {results.map((res, i) => (
+            <div 
+              key={i} 
+              className="p-2 border-b border-gray-200 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+              onClick={() => {
+                onResult(res);
+                setQuery('');
+                setResults([]);
+              }}
+            >
+              {res.posterUrl && <img src={res.posterUrl} className="w-8 h-12 object-cover shrink-0" />}
+              <div className="flex flex-col min-w-0">
+                <div className="text-sm font-bold truncate">{res.title}</div>
+                <div className="text-xs text-gray-500">{res.year} • {res.genre}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function MusicSearchInput({ onResult }: { onResult: (data: { song: string; artist: string; albumArt: string | null; previewUrl?: string | null; trackId?: string | null }) => void }) {
+function MusicSearchInput({ onResult }: { onResult: (data: { song: string; artist: string; albumArt: string | null; previewUrl?: string | null; trackId?: string | null; genre?: string }) => void }) {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [results, setResults] = useState<{ song: string; artist: string; albumArt: string | null; previewUrl?: string | null; trackId?: string | null; genre?: string }[]>([]);
 
   const handleSearch = async () => {
     if (!query) return;
     setIsSearching(true);
+    setResults([]);
     try {
-      const details = await searchSpotifyTrack(query);
-      if (details) {
-        onResult(details);
-        setQuery('');
+      const searchRes = await searchSpotifyResults(query);
+      if (searchRes && searchRes.length > 0) {
+        setResults(searchRes);
       } else {
         alert("Track not found or API not configured.");
       }
@@ -849,7 +876,7 @@ function MusicSearchInput({ onResult }: { onResult: (data: { song: string; artis
   };
 
   return (
-    <div className="flex flex-col gap-1 pb-4 mb-4 border-b border-paper-outline/30">
+    <div className="flex flex-col gap-1 pb-4 mb-4 border-b border-paper-outline/30 relative z-50">
       <label className="text-[10px] uppercase font-bold text-paper-outline">Search Spotify (Auto-populate)</label>
       <div className="flex gap-2">
         <input 
@@ -869,6 +896,27 @@ function MusicSearchInput({ onResult }: { onResult: (data: { song: string; artis
           {isSearching ? '...' : 'Search'}
         </button>
       </div>
+      {results.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-black shadow-[4px_4px_0_0_#000] z-50 max-h-60 overflow-y-auto">
+          {results.map((res, i) => (
+            <div 
+              key={i} 
+              className="p-2 border-b border-gray-200 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+              onClick={() => {
+                onResult(res);
+                setQuery('');
+                setResults([]);
+              }}
+            >
+              {res.albumArt && <img src={res.albumArt} className="w-10 h-10 object-cover shrink-0" />}
+              <div className="flex flex-col min-w-0">
+                <div className="text-sm font-bold truncate">{res.song}</div>
+                <div className="text-xs text-gray-500 truncate">{res.artist} {res.genre && `• ${res.genre}`}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

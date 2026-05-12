@@ -38,7 +38,54 @@ async function getAccessToken(): Promise<string | null> {
   }
 }
 
-export async function searchSpotifyTrack(query: string): Promise<{ song: string; artist: string; albumArt: string | null; previewUrl?: string | null; trackId?: string | null } | null> {
+export async function searchSpotifyResults(query: string): Promise<{ song: string; artist: string; albumArt: string | null; previewUrl?: string | null; trackId?: string | null; genre?: string }[]> {
+  try {
+    const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=5`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      return data.results.map((track: any) => ({
+        song: track.trackName,
+        artist: track.artistName,
+        albumArt: track.artworkUrl100 ? track.artworkUrl100.replace('100x100bb', '600x600bb') : null,
+        previewUrl: track.previewUrl || null,
+        trackId: track.trackId?.toString() || null,
+        genre: track.primaryGenreName || 'Pop'
+      }));
+    }
+  } catch (err) {
+    console.error("iTunes Search Error:", err);
+  }
+  
+  // Try Spotify if iTunes fails
+  const token = await getAccessToken();
+  if (!token) return [];
+  
+  try {
+    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=5`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    if (data.tracks && data.tracks.items && data.tracks.items.length > 0) {
+      return data.tracks.items.map((track: any) => ({
+        song: track.name,
+        artist: track.artists.map((a: any) => a.name).join(", "),
+        albumArt: track.album.images.length > 0 ? track.album.images[0].url : null,
+        previewUrl: track.preview_url || null,
+        trackId: track.id,
+        genre: 'Pop' // Spotify tracks don't have genre directly
+      }));
+    }
+  } catch (error) {
+    console.error("Spotify Search Error:", error);
+  }
+  
+  return [];
+}
+
+export async function searchSpotifyTrack(query: string): Promise<{ song: string; artist: string; albumArt: string | null; previewUrl?: string | null; trackId?: string | null; genre?: string } | null> {
   const token = await getAccessToken();
   if (!token) {
     console.warn("Spotify API credentials not configured. Falling back to iTunes API...");

@@ -12,6 +12,7 @@ interface MovieWidgetProps {
   title: string;
   rating?: string;
   year?: string;
+  genre?: string;
   rotation?: number;
   posterUrl?: string;
   variant?: 'vhs' | 'filmstrip' | 'dvd' | 'standard';
@@ -30,6 +31,7 @@ export function MovieWidget({
   title, 
   rating, 
   year, 
+  genre,
   rotation = 0, 
   posterUrl: initialPosterUrl, 
   variant,
@@ -108,7 +110,7 @@ export function MovieWidget({
                   <span>•</span>
                   <span className="flex items-center gap-1 text-red-600"><Play size={10} fill="currentColor" /> {rating}/10</span>
               </div>
-              <div className="mt-2 text-[10px] text-gray-400 font-mono italic">#movie-archive</div>
+              <div className="mt-2 text-[10px] text-gray-400 font-mono italic">#{genre ? genre.toLowerCase().replace(/\s+/g, '-') : 'movie-archive'}</div>
            </div>
         </div>
       </motion.article>
@@ -188,6 +190,7 @@ export function MovieWidget({
                         <span>{year || '2023'}</span>
                         <span>•</span>
                         <span>{rating ? `${rating}/10` : 'RATED'}</span>
+                        {genre && <><span>•</span><span>{genre}</span></>}
                     </div>
                </div>
                
@@ -256,8 +259,11 @@ export function MovieWidget({
                     </div>
                     {/* Frame Footer Text */}
                     <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between font-mono">
-                         <span className="text-black text-[10px] font-bold tracking-tighter uppercase truncate max-w-[65%]">{title}</span>
-                         <span className="bg-[#cc0000] text-white text-[8px] font-bold px-1 py-0.5">{rating || 'G'} RATED</span>
+                         <div className="flex items-center gap-1 overflow-hidden shrink min-w-0 pr-1">
+                           <span className="text-black text-[10px] font-bold tracking-tighter uppercase truncate">{title}</span>
+                           {genre && <span className="text-black/60 text-[8px] font-bold tracking-tighter uppercase shrink-0">• {genre}</span>}
+                         </div>
+                         <span className="bg-[#cc0000] text-white text-[8px] font-bold px-1 py-0.5 shrink-0">{rating || 'G'} RATED</span>
                     </div>
                </div>
   
@@ -349,7 +355,7 @@ export function MovieWidget({
         <div className="flex-1 pl-4 flex flex-col justify-center z-20 overflow-hidden">
            <div className="flex items-center gap-1 mb-1.5">
                <span className="bg-[#cc0000] text-white text-[7px] font-black py-0.5 px-1.5 uppercase tracking-widest leading-none shadow-[2px_2px_0_#000]">
-                 FEATURE FILM
+                 FEATURE FILM {genre ? `• ${genre.toUpperCase()}` : ''}
                </span>
            </div>
            

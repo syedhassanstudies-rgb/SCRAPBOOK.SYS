@@ -12,6 +12,7 @@ interface MusicWidgetProps {
   userId?: string;
   song: string;
   artist: string;
+  genre?: string;
   albumArt?: string;
   previewUrl?: string;
   rotation?: number;
@@ -23,7 +24,7 @@ interface MusicWidgetProps {
   theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'vhs' | 'cd' | 'cassette' | 'vinyl' | 'mini-disc' | 'standard';
 }
 
-export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumArt, previewUrl: initialPreviewUrl, rotation = 2, design = 'standard', color = 'tertiary', bgColor, fontFamily, borderStyle, theme = 'retro' }: MusicWidgetProps) {
+export function MusicWidget({ id, userId, song, artist, genre, albumArt: initialAlbumArt, previewUrl: initialPreviewUrl, rotation = 2, design = 'standard', color = 'tertiary', bgColor, fontFamily, borderStyle, theme = 'retro' }: MusicWidgetProps) {
   const [albumArt, setAlbumArt] = useState<string | null>(initialAlbumArt || null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialPreviewUrl || null);
   const [loading, setLoading] = useState(!initialAlbumArt && song !== 'Song Title');
@@ -139,7 +140,7 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
                 <div className="border-b-[0.5px] border-red-500/50 pb-1 mb-1 relative before:content-[''] before:absolute before:left-0 before:right-0 before:top-[12px] before:border-b-[0.5px] before:border-red-500/20">
                   <span className="text-[8px] uppercase tracking-widest text-[#555]">Title / Artist</span>
                   <div className="text-[#cc0000] font-sans font-bold italic text-sm truncate leading-tight tracking-tight mt-0.5">
-                    {song} - {artist}
+                    {song} - {artist} {genre && `(${genre})`}
                   </div>
                 </div>
                 <div className="flex justify-between text-[8px] text-[#555] font-bold uppercase">
@@ -303,7 +304,7 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
                 </div>
                 <div className="flex flex-col">
                   <span className="text-black font-bold uppercase tracking-wide truncate text-lg leading-tight">{song}</span>
-                  <span className="text-black/80 font-sans font-medium text-sm truncate">{artist}</span>
+                  <span className="text-black/80 font-sans font-medium text-sm truncate">{artist} {genre && `• ${genre}`}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="h-1 flex-1 bg-black/20 rounded-full overflow-hidden">
@@ -440,7 +441,7 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
             </div>
             
             <h3 className="font-serif italic font-bold text-xl leading-tight text-black line-clamp-2 tracking-tight group-hover:text-[#cc0000] transition-colors">{song}</h3>
-            <p className="text-[11px] font-sans font-bold text-gray-600 uppercase tracking-wider truncate mt-1 mb-3">{artist}</p>
+            <p className="text-[11px] font-sans font-bold text-gray-600 uppercase tracking-wider truncate mt-1 mb-3">{artist} {genre && `• ${genre}`}</p>
             
             <div className="flex gap-2 relative z-20">
               <button className="bg-white border-2 border-black w-8 h-8 flex items-center justify-center shadow-[2px_2px_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none hover:bg-gray-50 transition-all text-[#111]">
@@ -504,7 +505,7 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
                             <div className="border-b border-red-500/30 pb-0.5 mb-1">
                                <h3 className="font-sans font-bold text-black uppercase text-[10px] leading-none truncate">{song || 'Unknown Track'}</h3>
                             </div>
-                            <h4 className="font-sans font-medium text-gray-600 uppercase text-[8px] leading-none truncate">{artist || 'Unknown Artist'}</h4>
+                            <h4 className="font-sans font-medium text-gray-600 uppercase text-[8px] leading-none truncate">{artist || 'Unknown Artist'} {genre && `• ${genre}`}</h4>
                         </div>
                     </div>
                 </div>
@@ -624,7 +625,7 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
         
         <div className={`flex flex-col overflow-hidden ${isMinimal ? 'pl-2' : ''}`}>
           <span className={`font-bold truncate ${isMinimal ? 'text-md' : 'text-sm'}`}>{song}</span>
-          <span className={`italic truncate ${isMinimal ? 'text-[10px]' : 'text-[12px] opacity-70'}`}>{artist}</span>
+          <span className={`italic truncate ${isMinimal ? 'text-[10px]' : 'text-[12px] opacity-70'}`}>{artist} {genre && `• ${genre}`}</span>
         </div>
       </div>
 
