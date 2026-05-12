@@ -108,9 +108,9 @@ export function MovieWidget({
               <div className="flex items-center gap-2 text-xs text-gray-500 font-bold uppercase tracking-wider">
                   <span>{year}</span>
                   <span>•</span>
-                  <span className="flex items-center gap-1 text-red-600"><Play size={10} fill="currentColor" /> {rating}/10</span>
+                  <span className="flex items-center gap-1 text-red-600"><Play size={10} fill="currentColor" /> {rating?.endsWith('/10') ? rating : `${rating}/10`}</span>
               </div>
-              <div className="mt-2 text-[10px] text-gray-400 font-mono italic">#{genre ? genre.toLowerCase().replace(/\s+/g, '-') : 'movie-archive'}</div>
+              <div className="mt-2 text-[10px] text-gray-400 font-mono italic truncate">#{genre ? genre.toLowerCase().replace(/\s+/g, '-') : 'movie-archive'}</div>
            </div>
         </div>
       </motion.article>
@@ -189,8 +189,8 @@ export function MovieWidget({
                     <div className="flex gap-2 font-mono text-[9px] text-gray-600 font-bold uppercase">
                         <span>{year || '2023'}</span>
                         <span>•</span>
-                        <span>{rating ? `${rating}/10` : 'RATED'}</span>
-                        {genre && <><span>•</span><span>{genre}</span></>}
+                        <span>{rating?.endsWith('/10') ? rating : (rating ? `${rating}/10` : 'RATED')}</span>
+                        {genre && <><span className="shrink-0">•</span><span className="truncate">{genre}</span></>}
                     </div>
                </div>
                
@@ -261,9 +261,9 @@ export function MovieWidget({
                     <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between font-mono">
                          <div className="flex items-center gap-1 overflow-hidden shrink min-w-0 pr-1">
                            <span className="text-black text-[10px] font-bold tracking-tighter uppercase truncate">{title}</span>
-                           {genre && <span className="text-black/60 text-[8px] font-bold tracking-tighter uppercase shrink-0">• {genre}</span>}
+                           {genre && <span className="text-black/60 text-[8px] font-bold tracking-tighter uppercase truncate leading-none shrink min-w-0">• {genre}</span>}
                          </div>
-                         <span className="bg-[#cc0000] text-white text-[8px] font-bold px-1 py-0.5 shrink-0">{rating || 'G'} RATED</span>
+                         <span className="bg-[#cc0000] text-white text-[8px] font-bold px-1 py-0.5 shrink-0">{rating?.includes('/10') ? rating.split('/')[0] : (rating || 'G')} RATED</span>
                     </div>
                </div>
   
@@ -353,11 +353,11 @@ export function MovieWidget({
 
         {/* Right: Info */}
         <div className="flex-1 pl-4 flex flex-col justify-center z-20 overflow-hidden">
-           <div className="flex items-center gap-1 mb-1.5">
-               <span className="bg-[#cc0000] text-white text-[7px] font-black py-0.5 px-1.5 uppercase tracking-widest leading-none shadow-[2px_2px_0_#000]">
-                 FEATURE FILM {genre ? `• ${genre.toUpperCase()}` : ''}
-               </span>
-           </div>
+            <div className="flex items-center gap-1 mb-1.5 min-w-0 overflow-hidden">
+                <span className="bg-[#cc0000] text-white text-[7px] font-black py-0.5 px-1.5 uppercase tracking-widest leading-none shadow-[2px_2px_0_#000] truncate">
+                  FEATURE FILM {genre ? `• ${genre.toUpperCase()}` : ''}
+                </span>
+            </div>
            
            <h3 className="font-sans font-black text-xl leading-[1.05] uppercase tracking-tighter text-black mb-3 line-clamp-2">
              {title || 'Untitled Feature'}
@@ -366,7 +366,7 @@ export function MovieWidget({
            {/* Tags */}
            <div className="flex flex-wrap gap-1 mb-3 shrink-0">
                <span className="border-[1.5px] border-black bg-[#ffeb3b] text-black text-[8px] font-mono font-bold px-1.5 py-0.5 uppercase shadow-[2px_2px_0_0_#000]">
-                 {rating ? `${rating}/10` : 'SCI-FI'}
+                 {rating?.endsWith('/10') ? rating : (rating ? `${rating}/10` : 'SCI-FI')}
                </span>
                <span className="border-[1.5px] border-black bg-white text-black text-[8px] font-mono font-bold px-1.5 py-0.5 uppercase shadow-[2px_2px_0_0_#000]">
                  {year || '2023'} HD
@@ -384,7 +384,7 @@ export function MovieWidget({
                <button className="flex-1 bg-[#cc0000] border-[1.5px] border-black text-white text-[9px] font-bold py-1.5 shadow-[2px_2px_0_0_#000] flex items-center justify-center gap-1 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none hover:bg-red-700 transition-all">
                   <Play size={8} fill="white" /> PLAY
                </button>
-               <button className="flex-1 bg-white border-[1.5px] border-black text-black text-[9px] font-bold py-1.5 shadow-[2px_2px_0_0_#000] flex items-center justify-center act gap-1 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none hover:bg-gray-50 transition-all">
+               <button className="flex-1 bg-white border-[1.5px] border-black text-black text-[9px] font-bold py-1.5 shadow-[2px_2px_0_0_#000] flex items-center justify-center gap-1 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none hover:bg-gray-50 transition-all">
                   + START
                </button>
            </div>
