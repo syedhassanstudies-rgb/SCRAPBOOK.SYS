@@ -16,6 +16,8 @@ interface NoteWidgetProps {
 
 export function NoteWidget({ title, items, rotation = -3, design = 'list', bgColor, fontFamily, borderStyle, theme = 'retro' }: NoteWidgetProps) {
   const isTapeTop = design === 'tape-top';
+  const isStandardDesign = !design || design === 'list';
+  const effectiveTheme = isStandardDesign ? theme : 'retro';
   
   const textColor = getContrastText(bgColor);
   const borderColor = getContrastBorder(bgColor);
@@ -35,10 +37,10 @@ export function NoteWidget({ title, items, rotation = -3, design = 'list', bgCol
       initial={{ opacity: 0, x: -20, rotate: rotation }}
       animate={{ opacity: 1, x: 0, rotate: rotation }}
       whileHover={{ scale: 1.02, rotate: 0, zIndex: 50, transition: { duration: 0.3 } }}
-      className={themeClasses[theme]}
-      style={{ backgroundColor: theme === 'y2k' ? undefined : (bgColor || (design === 'notebook' ? '#fff' : '#fdfcf8')) }}
+      className={themeClasses[effectiveTheme]}
+      style={{ backgroundColor: effectiveTheme === 'y2k' ? undefined : (bgColor || (design === 'notebook' ? '#fff' : '#fdfcf8')) }}
     >
-      {theme === 'retro' && (
+      {effectiveTheme === 'retro' && (
         isTapeTop ? (
            <Tape color="yellow" rotation={2} className="-top-3 left-1/2 -translate-x-1/2 w-16 h-5 opacity-80" />
         ) : (

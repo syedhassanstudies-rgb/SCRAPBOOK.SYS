@@ -1,9 +1,9 @@
-import { Play, SkipBack, SkipForward, Music, Disc, Sparkles } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Music, Disc, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Tape } from './Tape';
-import { getContrastText, getContrastBorder } from '../lib/utils';
-import { findSpotifyAlbumArt } from '../services/spotifyService';
+import { getContrastText, getContrastBorder, sanitizeData } from '../lib/utils';
+import { searchSpotifyTrack } from '../services/spotifyService';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -13,6 +13,7 @@ interface MusicWidgetProps {
   song: string;
   artist: string;
   albumArt?: string;
+  previewUrl?: string;
   rotation?: number;
   design?: 'standard' | 'minimal' | 'cassette' | 'vinyl' | 'y2k' | 'cd' | 'mini-disc' | 'vhs';
   color?: 'primary' | 'secondary' | 'tertiary' | 'yellow';
@@ -22,45 +23,88 @@ interface MusicWidgetProps {
   theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'vhs' | 'cd' | 'cassette' | 'vinyl' | 'mini-disc' | 'standard';
 }
 
-export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumArt, rotation = 2, design = 'standard', color = 'tertiary', bgColor, fontFamily, borderStyle, theme = 'retro' }: MusicWidgetProps) {
+export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumArt, previewUrl: initialPreviewUrl, rotation = 2, design = 'standard', color = 'tertiary', bgColor, fontFamily, borderStyle, theme = 'retro' }: MusicWidgetProps) {
   const [albumArt, setAlbumArt] = useState<string | null>(initialAlbumArt || null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialPreviewUrl || null);
   const [loading, setLoading] = useState(!initialAlbumArt && song !== 'Song Title');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePlay = (e?: React.MouseEvent | React.PointerEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(err => {
+        console.error("Playback failed", err);
+      });
+    }
+  };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const handleEnded = () => setIsPlaying(false);
+    audio.addEventListener('ended', handleEnded);
+    return () => audio.removeEventListener('ended', handleEnded);
+  }, [previewUrl, audioRef.current]);
 
   useEffect(() => {
     if (initialAlbumArt) {
       setAlbumArt(initialAlbumArt);
       setLoading(false);
-    } else if (song && song !== 'Song Title') {
-      setLoading(true);
-      findSpotifyAlbumArt(song, artist).then(async (url) => {
-        setAlbumArt(url);
-        setLoading(false);
-        if (url && id && userId) {
-          try {
-            await updateDoc(doc(db, 'users', userId, 'pieces', id), {
-              'data.albumArt': url
-            });
-          } catch (e) {
-            console.error("Error updates music albumart", e);
+    }
+    if (initialPreviewUrl) {
+      setPreviewUrl(initialPreviewUrl);
+    }
+    
+    if ((!initialAlbumArt || !initialPreviewUrl) && song && song !== 'Song Title') {
+      setLoading(!initialAlbumArt);
+      searchSpotifyTrack(`${song} ${artist}`).then(async (data) => {
+        if (data) {
+          if (!initialAlbumArt && data.albumArt) setAlbumArt(data.albumArt);
+          if (!initialPreviewUrl && data.previewUrl) setPreviewUrl(data.previewUrl);
+          
+          setLoading(false);
+          if (id && userId && (data.albumArt || data.previewUrl)) {
+            try {
+              const updateData: any = {};
+              if (!initialAlbumArt && data.albumArt) updateData['data.albumArt'] = data.albumArt;
+              if (!initialPreviewUrl && data.previewUrl) updateData['data.previewUrl'] = data.previewUrl;
+              
+              if (Object.keys(updateData).length > 0) {
+                 await updateDoc(doc(db, 'users', userId, 'pieces', id), sanitizeData(updateData));
+              }
+            } catch (e) {
+              console.error("Error updates music data", e);
+            }
           }
+        } else {
+          setLoading(false);
         }
       });
     }
-  }, [initialAlbumArt, song, artist, id, userId]);
+  }, [initialAlbumArt, initialPreviewUrl, song, artist, id, userId]);
 
-  const isVhs = design === 'vhs' || theme === 'vhs';
-  const isCd = design === 'cd' || theme === 'cd';
-  const isMiniDisc = design === 'mini-disc' || theme === 'mini-disc';
-  const isVinyl = design === 'vinyl' || theme === 'vinyl';
-  const isCassette = design === 'cassette' || theme === 'cassette';
+  const isStandardDesign = !design || design === 'standard';
   
-  // Backwards compatibility and robust selection
-  const activeStyle = isCd ? 'cd' : 
-                      isVhs ? 'vhs' : 
-                      isCassette ? 'cassette' : 
-                      isVinyl ? 'vinyl' : 
-                      isMiniDisc ? 'mini-disc' : 
-                      design !== 'standard' ? design : theme;
+  // Only use theme for style selection if design is standard
+  const activeStyle = !isStandardDesign 
+    ? (design as any)
+    : (theme === 'retro' ? 'cassette' : theme);
+
+  const isVhs = activeStyle === 'vhs';
+  const isCd = activeStyle === 'cd';
+  const isMiniDisc = activeStyle === 'mini-disc';
+  const isVinyl = activeStyle === 'vinyl';
+  const isCassette = activeStyle === 'cassette';
   
   const isMinimal = activeStyle === 'minimal';
   const isY2K = activeStyle === 'y2k';
@@ -79,20 +123,17 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
         initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
         animate={{ opacity: 1, scale: 1, rotate: rotation }}
         whileHover={{ scale: 1.02, rotate: 0, zIndex: 50, transition: { duration: 0.3 } }}
-        className="relative w-full max-w-[420px] mb-6 group font-mono"
+        className="relative w-[320px] sm:w-[400px] mb-6 group font-mono"
       >
-        <div className="bg-[#1a1a1a] rounded-[2px] border-l-[12px] border-[#0f0f0f] p-4 shadow-[8px_8px_0_0_rgba(0,0,0,0.8)] relative aspect-[1.6/1] overflow-hidden">
+        <div className="bg-[#1a1a1a] rounded-[2px] border-l-[12px] border-[#0f0f0f] shadow-[8px_8px_0_0_rgba(0,0,0,0.8)] relative aspect-[1.8/1] overflow-hidden">
           {/* Angled Labels */}
-          <div className="absolute top-2 right-2 bg-white px-2 py-0.5 border-2 border-black rotate-[45deg] translate-x-4 -translate-y-2 z-20">
+          <div className="absolute top-2 right-2 bg-white px-2 py-0.5 border-2 border-black rotate-[45deg] translate-x-4 -translate-y-2 z-30">
             <span className="text-[8px] font-bold uppercase tracking-widest text-black">Please Rewind</span>
           </div>
-          <div className="absolute -bottom-1 left-4 bg-[#c8b98e] px-2 py-0.5 border-2 border-black rotate-[-10deg] translate-y-3 -translate-x-2 z-20">
-            <span className="text-[10px] font-bold uppercase text-black">Lo-Fi Only</span>
-          </div>
 
-          <div className="flex gap-4 h-full">
+          <div className="flex gap-4 h-full p-4">
             {/* Left Column (Label + Spools + Controls) */}
-            <div className="flex flex-col flex-1 relative">
+            <div className="flex flex-col flex-1 relative h-full">
               {/* Top Label */}
               <div className="bg-white border-2 border-black p-2 w-[90%] rotate-[-1deg] relative z-20 shadow-md h-[72px]">
                 <div className="border-b-[0.5px] border-red-500/50 pb-1 mb-1 relative before:content-[''] before:absolute before:left-0 before:right-0 before:top-[12px] before:border-b-[0.5px] before:border-red-500/20">
@@ -107,42 +148,42 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
                 </div>
               </div>
 
-              {/* Spools Base */}
-              <div className="absolute top-[85px] left-0 right-10 h-[90px] flex items-center justify-between px-2 opacity-80">
+              {/* Spools Base - Increased bottom buffer */}
+              <div className="absolute top-[85px] left-0 right-10 bottom-12 flex items-center justify-between px-2 opacity-80">
                 {/* Left Spool */}
-                <div className="w-16 h-16 bg-[#111] border-[3px] border-[#222] rounded-[16px] flex items-center justify-center relative overflow-hidden shadow-[inset_0_4px_8px_rgba(0,0,0,0.9)] rotate-[-15deg]">
-                   <div className="w-12 h-12 rounded-full border border-white/5 absolute" />
-                   <div className="w-8 h-8 rounded-full border border-white/5 absolute" />
+                <div className="w-14 h-14 bg-[#111] border-[3px] border-[#222] rounded-[16px] flex items-center justify-center relative overflow-hidden shadow-[inset_0_4px_8px_rgba(0,0,0,0.9)] rotate-[-15deg]">
+                   <div className="w-10 h-10 rounded-full border border-white/5 absolute" />
                    <div className="w-2 h-2 rounded-full bg-[#b8860b] shadow-[0_0_4px_#b8860b]" />
                 </div>
                 {/* Right Spool */}
-                <div className="w-16 h-16 bg-[#111] border-[3px] border-[#222] rounded-[16px] flex items-center justify-center relative overflow-hidden shadow-[inset_0_4px_8px_rgba(0,0,0,0.9)] rotate-[15deg]">
-                   <div className="w-12 h-12 rounded-full border border-white/5 absolute" />
-                   <div className="w-8 h-8 rounded-full border border-white/5 absolute" />
+                <div className="w-14 h-14 bg-[#111] border-[3px] border-[#222] rounded-[16px] flex items-center justify-center relative overflow-hidden shadow-[inset_0_4px_8px_rgba(0,0,0,0.9)] rotate-[15deg]">
+                   <div className="w-10 h-10 rounded-full border border-white/5 absolute" />
                    <div className="w-2 h-2 rounded-full bg-[#1e40af] shadow-[0_0_4px_#1e40af]" />
                 </div>
               </div>
 
               {/* Bottom Play Controls & Time */}
-              <div className="absolute bottom-1 left-0 right-0 flex justify-between items-end">
-                <div className="flex gap-2 bg-[#111] p-2 border-2 border-black rounded-sm shadow-[4px_4px_0_#000]">
-                  <button className="bg-[#0033cc] w-6 h-6 flex items-center justify-center border border-black shadow-[2px_2px_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all">
-                    <SkipBack size={10} fill="white" className="text-white" />
+              <div className="absolute bottom-0 left-0 right-0 flex justify-between items-end z-20">
+                <div className="flex gap-2 bg-[#111] p-1.5 border-2 border-black rounded-sm shadow-[4px_4px_0_#000]">
+                  <button 
+                    onClick={previewUrl ? togglePlay : undefined} 
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className={`${previewUrl ? 'cursor-pointer hover:bg-red-700' : 'cursor-not-allowed opacity-50'} bg-[#cc0000] w-7 h-6 flex items-center justify-center border border-black shadow-[2px_2px_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all`}
+                  >
+                    {isPlaying ? <Pause size={10} fill="white" className="text-white" /> : <Play size={10} fill="white" className="text-white" />}
                   </button>
-                  <button className="bg-[#cc0000] w-8 h-6 flex items-center justify-center border border-black shadow-[2px_2px_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all">
-                    <Play size={12} fill="white" className="text-white" />
-                  </button>
-                  <button className="bg-[#0033cc] w-6 h-6 flex items-center justify-center border border-black shadow-[2px_2px_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all">
-                    <SkipForward size={10} fill="white" className="text-white" />
-                  </button>
+                  <div className="flex flex-col items-center justify-center text-[6px] text-white/40 font-bold px-1">
+                    <span>{isPlaying ? 'PLAY' : 'REC'}</span>
+                    <div className={`w-1 h-1 rounded-full ${isPlaying ? 'bg-green-500 shadow-[0_0_4px_#22c55e]' : 'bg-red-600/30'}`} />
+                  </div>
                 </div>
                 
-                <div className="flex flex-col items-end gap-1 pb-1">
-                  <div className="flex items-center gap-1.5 text-[#cc0000] text-[10px] font-bold tracking-wider">
-                    <div className="w-2 h-2 rounded-full bg-[#cc0000] animate-pulse shadow-[0_0_4px_#cc0000]" />
-                    PLAYING
+                <div className="flex flex-col items-end gap-1">
+                  <div className={`flex items-center gap-1.5 ${isPlaying ? 'text-green-500' : 'text-[#cc0000] opacity-70'} text-[8px] font-bold tracking-wider`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${isPlaying ? 'bg-green-500 animate-pulse shadow-[0_0_4px_#22c55e]' : 'bg-[#cc0000]'}`} />
+                    {isPlaying ? 'PLAYING' : 'STOPPED'}
                   </div>
-                  <div className="text-white/60 font-mono text-xl tracking-widest bg-black/40 px-1 rounded-sm">
+                  <div className="text-white/60 font-mono text-lg tracking-widest bg-black/40 px-1 rounded-sm">
                     04:52
                   </div>
                 </div>
@@ -150,24 +191,27 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
             </div>
 
             {/* Right Column: Polaroid Art */}
-            <div className="w-[120px] shrink-0 mt-4 relative z-10 flex flex-col items-center">
-              <Tape color="tertiary" rotation={-5} className="-top-3 z-30 w-12 h-6" />
-              <div className="bg-white p-2 pb-6 border border-black/10 shadow-lg rotate-[8deg] transition-transform hover:rotate-0 w-full">
+            <div className="w-[110px] shrink-0 mt-2 relative z-10 flex flex-col items-center">
+              <Tape color="tertiary" rotation={-5} className="-top-3 z-30 w-10 h-5" />
+              <div className="bg-white p-2 pb-5 border border-black/10 shadow-lg rotate-[8deg] transition-transform hover:rotate-0 w-full aspect-[4/5] flex flex-col">
                 <div className="bg-[#222] aspect-square w-full relative overflow-hidden">
                   {albumArt ? (
                     <img src={albumArt} alt={song} className="w-full h-full object-cover grayscale contrast-125 sepia-[0.3]" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center border border-[#333]">
-                      <Music size={24} className="text-white/20" />
+                      <Music size={20} className="text-white/20" />
                     </div>
                   )}
-                  {/* Subtle vignette/glare on polaroid */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-white/20 mix-blend-overlay" />
+                </div>
+                <div className="mt-auto h-4 flex items-center">
+                   <div className="h-0.5 w-full bg-gray-100" />
                 </div>
               </div>
             </div>
           </div>
         </div>
+        {previewUrl && <audio ref={audioRef} src={previewUrl} preload="none" />}
       </motion.article>
     );
   }
@@ -179,7 +223,7 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
         initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
         animate={{ opacity: 1, scale: 1, rotate: rotation }}
         whileHover={{ scale: 1.02, rotate: 0, zIndex: 50, transition: { duration: 0.3 } }}
-        className="relative w-full max-w-[320px] mb-12 group font-mono"
+        className="relative w-[260px] sm:w-[300px] mb-12 group font-mono"
       >
         <div className="relative aspect-square w-full rounded-[4px] border-[2px] border-black bg-white shadow-[12px_12px_0_0_rgba(0,0,0,1)] overflow-hidden">
           {/* Main Cover Art */}
@@ -195,9 +239,9 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
           {/* Circular Text */}
           <div className="absolute inset-4 rounded-full border border-black/10 flex items-center justify-center">
              <svg viewBox="0 0 200 200" className="w-full h-full absolute inset-0 animate-[spin_30s_linear_infinite] select-none pointer-events-none opacity-80">
-               <path id="curve" d="M 100, 100 m -80, 0 a 80,80 0 1,1 160,0 a 80,80 0 1,1 -160,0" fill="transparent" />
+               <path id={`curve-${id || song.replace(/\s+/g,'')}`} d="M 100, 100 m -80, 0 a 80,80 0 1,1 160,0 a 80,80 0 1,1 -160,0" fill="transparent" />
                <text className="text-[12px] font-bold tracking-widest uppercase" fill="#111">
-                 <textPath href="#curve" startOffset="0%">{artist} • {song} • {artist} • {song} • </textPath>
+                 <textPath href={`#curve-${id || song.replace(/\s+/g,'')}`} startOffset="0%">{artist} • {song} • {artist} • {song} • </textPath>
                </text>
              </svg>
           </div>
@@ -217,14 +261,19 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
             <button className="w-10 h-10 bg-[#0033cc] border-[3px] border-black rounded-[4px] shadow-[4px_4px_0_#000] flex items-center justify-center active:translate-y-[2px] active:translate-x-[2px] active:shadow-none hover:bg-blue-600 transition-all">
               <SkipBack size={14} fill="white" className="text-white" />
             </button>
-            <button className="w-14 h-12 bg-[#cc0000] border-[3px] border-black rounded-[6px] shadow-[4px_4px_0_#000] flex items-center justify-center active:translate-y-[2px] active:translate-x-[2px] active:shadow-none hover:bg-red-600 transition-all mb-[-4px]">
-              <Play size={20} fill="white" className="text-white" />
+            <button 
+              onClick={previewUrl ? togglePlay : undefined}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={`w-14 h-12 bg-[#cc0000] border-[3px] border-black rounded-[6px] shadow-[4px_4px_0_#000] flex items-center justify-center active:translate-y-[2px] active:translate-x-[2px] active:shadow-none hover:bg-red-600 transition-all mb-[-4px] ${!previewUrl && 'opacity-50 cursor-not-allowed'}`}
+            >
+              {isPlaying ? <Pause size={20} fill="white" className="text-white" /> : <Play size={20} fill="white" className="text-white" />}
             </button>
             <button className="w-10 h-10 bg-[#0033cc] border-[3px] border-black rounded-[4px] shadow-[4px_4px_0_#000] flex items-center justify-center active:translate-y-[2px] active:translate-x-[2px] active:shadow-none hover:bg-blue-600 transition-all">
               <SkipForward size={14} fill="white" className="text-white" />
             </button>
           </div>
         </div>
+        {previewUrl && <audio ref={audioRef} src={previewUrl} preload="none" />}
       </motion.article>
     );
   }
@@ -236,7 +285,7 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
         initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
         animate={{ opacity: 1, scale: 1, rotate: rotation }}
         whileHover={{ scale: 1.02, rotate: 0, zIndex: 50, transition: { duration: 0.3 } }}
-        className="relative w-full max-w-[420px] mb-6 group font-mono"
+        className="relative w-[320px] sm:w-[400px] mb-6 group font-mono"
       >
         <div className="bg-[#e2e8fc] border-[3px] border-black rounded-[4px] p-4 shadow-[12px_12px_0_0_rgba(0,0,0,1)] relative h-[280px]">
           {/* Main Layout Grid */}
@@ -278,7 +327,9 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
                   {/* Subtle playback overlay matching reference */}
                   <div className="absolute bottom-2 inset-x-2 flex items-center justify-center gap-2 opacity-50 bg-black/40 rounded-full px-2 py-1 backdrop-blur-sm">
                     <SkipBack size={10} className="text-white" />
-                    <Play size={10} className="text-white" />
+                    <button onClick={previewUrl ? togglePlay : undefined} onPointerDown={(e) => e.stopPropagation()} className={!previewUrl ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110 transition-transform'}>
+                      {isPlaying ? <Pause size={10} className="text-white" /> : <Play size={10} className="text-white" />}
+                    </button>
                     <SkipForward size={10} className="text-white" />
                   </div>
                 </div>
@@ -328,6 +379,7 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
              </div>
           </div>
         </div>
+        {previewUrl && <audio ref={audioRef} src={previewUrl} preload="none" />}
       </motion.article>
     );
   }
@@ -339,7 +391,7 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
         initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
         animate={{ opacity: 1, scale: 1, rotate: rotation }}
         whileHover={{ scale: 1.02, rotate: 0, zIndex: 50, transition: { duration: 0.3 } }}
-        className="relative w-full max-w-[440px] mb-6 group font-sans"
+        className="relative w-[340px] sm:w-[420px] mb-6 group font-sans"
       >
         <div className={`bg-[#fdfbf7] border-2 border-black rounded-sm p-4 shadow-[8px_8px_0_0_#111] relative flex h-[160px] w-full items-center overflow-hidden`}>
           {/* Main Sleeve */}
@@ -394,8 +446,12 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
               <button className="bg-white border-2 border-black w-8 h-8 flex items-center justify-center shadow-[2px_2px_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none hover:bg-gray-50 transition-all text-[#111]">
                 <SkipBack size={12} fill="currentColor" strokeWidth={1} />
               </button>
-              <button className="bg-black border-2 border-black text-white w-10 h-8 flex items-center justify-center shadow-[2px_2px_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none hover:bg-gray-800 transition-all">
-                <Play size={14} fill="white" strokeWidth={1} />
+              <button 
+                onClick={previewUrl ? togglePlay : undefined}
+                onPointerDown={(e) => e.stopPropagation()}
+                className={`bg-black border-2 border-black text-white w-10 h-8 flex items-center justify-center shadow-[2px_2px_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none hover:bg-gray-800 transition-all ${!previewUrl && 'opacity-50 cursor-not-allowed'}`}
+              >
+                {isPlaying ? <Pause size={14} fill="white" strokeWidth={1} /> : <Play size={14} fill="white" strokeWidth={1} />}
               </button>
               <button className="bg-white border-2 border-black w-8 h-8 flex items-center justify-center shadow-[2px_2px_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none hover:bg-gray-50 transition-all text-[#111]">
                 <SkipForward size={12} fill="currentColor" strokeWidth={1} />
@@ -413,70 +469,83 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
         initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
         animate={{ opacity: 1, scale: 1, rotate: rotation }}
         whileHover={{ scale: 1.02, rotate: 0, zIndex: 50 }}
-        className="w-full max-w-[420px] mb-6 relative group font-sans"
+        className="w-[320px] sm:w-[400px] mb-6 relative group font-sans"
       >
-        <div className="bg-[#222] rounded-[8px] border-2 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative h-[200px] p-4 flex flex-col justify-between overflow-hidden">
+        <div className="bg-[#222] rounded-[8px] border-2 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative h-[210px] p-4 flex flex-col overflow-hidden">
            {/* Texture/Depth */}
-           <div className="absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-[#333] to-[#222] border-b border-black/40" />
+           <div className="absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-[#333] to-[#222] border-b border-black/40 z-10" />
            
-           {/* Middle Indent area */}
-           <div className="absolute inset-y-8 left-6 right-6 border-2 border-[#111] rounded-sm bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.5)] flex items-center justify-between px-8">
-               {/* Left Wheel */}
-               <div className={`w-20 h-20 rounded-full border-4 border-[#222] bg-[#111] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] ${loading ? '' : 'group-hover:rotate-180 transition-transform duration-1000'}`}>
-                    <div className="w-8 h-8 rounded-full border-2 border-[#222] bg-transparent flex flex-col justify-between items-center py-2">
-                        <div className="w-full h-px bg-[#222] rotate-45 transform origin-center" />
-                        <div className="w-full h-px bg-[#222] -rotate-45 transform origin-center" />
+           {/* Middle Indent area - Changed to be relative-positioned child of a flex-1 container to avoid overlap */}
+           <div className="flex-1 my-4 relative">
+             <div className="absolute inset-0 border-2 border-[#111] rounded-sm bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.5)] flex items-center justify-between px-8">
+                {/* Left Wheel */}
+                <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-[#222] bg-[#111] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] ${loading ? '' : 'group-hover:rotate-180 transition-transform duration-1000'}`}>
+                     <div className="w-8 h-8 rounded-full border-2 border-[#222] bg-transparent flex flex-col justify-between items-center py-2">
+                         <div className="w-full h-px bg-[#222] rotate-45 transform origin-center" />
+                         <div className="w-full h-px bg-[#222] -rotate-45 transform origin-center" />
+                     </div>
+                </div>
+                
+                {/* Center Label Area */}
+                <div className="flex-1 h-full mx-2 sm:mx-4 py-2 z-10">
+                    <div className="w-full h-full bg-[#f4f4f0] border-2 border-slate-300 rounded-sm shadow-md py-1 px-2 flex gap-2 rotate-[-0.5deg]">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-black shrink-0 relative overflow-hidden border border-gray-400">
+                             {loading ? (
+                               <div className="w-full h-full flex items-center justify-center animate-pulse">
+                                  <Disc size={20} className="text-gray-400 opacity-30" />
+                               </div>
+                             ) : albumArt ? (
+                               <img src={albumArt} className="w-full h-full object-cover grayscale contrast-125 sepia-[0.2]" />
+                             ) : (
+                               <div className="w-full h-full bg-[#333]" />
+                             )}
+                        </div>
+                        <div className="flex flex-col flex-1 justify-center min-w-0">
+                            <div className="border-b border-red-500/30 pb-0.5 mb-1">
+                               <h3 className="font-sans font-bold text-black uppercase text-[10px] leading-none truncate">{song || 'Unknown Track'}</h3>
+                            </div>
+                            <h4 className="font-sans font-medium text-gray-600 uppercase text-[8px] leading-none truncate">{artist || 'Unknown Artist'}</h4>
+                        </div>
                     </div>
-               </div>
-               
-               {/* Center Label Area */}
-               <div className="flex-1 h-full mx-4 py-2">
-                   <div className="w-full h-full bg-[#f4f4f0] border-2 border-slate-300 rounded-sm shadow-md py-1 px-2 flex gap-2">
-                       <div className="w-12 h-12 bg-black shrink-0 relative overflow-hidden border border-gray-400">
-                            {loading ? (
-                              <div className="w-full h-full flex items-center justify-center animate-pulse">
-                                 <Disc size={20} className="text-gray-400 opacity-30" />
-                              </div>
-                            ) : albumArt ? (
-                              <img src={albumArt} className="w-full h-full object-cover grayscale contrast-125 sepia-[0.2]" />
-                            ) : (
-                              <div className="w-full h-full bg-[#333]" />
-                            )}
-                       </div>
-                       <div className="flex flex-col flex-1 justify-center min-w-0">
-                           <div className="border-b border-red-500/30 pb-0.5 mb-1">
-                              <h3 className="font-sans font-bold text-black uppercase text-[10px] leading-none truncate">{song || 'Unknown Track'}</h3>
-                           </div>
-                           <h4 className="font-sans font-medium text-gray-600 uppercase text-[8px] leading-none truncate">{artist || 'Unknown Artist'}</h4>
-                       </div>
-                   </div>
-               </div>
-
-               {/* Right Wheel */}
-               <div className={`w-20 h-20 rounded-full border-4 border-[#222] bg-[#111] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] ${loading ? '' : 'group-hover:rotate-180 transition-transform duration-1000'}`}>
-                    <div className="w-8 h-8 rounded-full border-2 border-[#222] bg-transparent flex flex-col justify-between items-center py-2">
-                        <div className="w-full h-px bg-[#222] rotate-45 transform origin-center" />
-                        <div className="w-full h-px bg-[#222] -rotate-45 transform origin-center" />
-                    </div>
-               </div>
+                </div>
+ 
+                {/* Right Wheel */}
+                <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-[#222] bg-[#111] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] ${loading ? '' : 'group-hover:rotate-180 transition-transform duration-1000'}`}>
+                     <div className="w-8 h-8 rounded-full border-2 border-[#222] bg-transparent flex flex-col justify-between items-center py-2">
+                         <div className="w-full h-px bg-[#222] rotate-45 transform origin-center" />
+                         <div className="w-full h-px bg-[#222] -rotate-45 transform origin-center" />
+                     </div>
+                </div>
+             </div>
            </div>
-
+ 
            {/* Bottom Bar: SIDE A / STEREO */}
-           <div className="flex justify-between items-center pt-2">
+           <div className="flex justify-between items-center mt-auto h-8 px-2 z-10">
                <div className="bg-[#cc0000] text-white px-2 py-0.5 text-[10px] font-black italic shadow-[2px_2px_0_rgba(0,0,0,1)]">SIDE A</div>
                <div className="flex gap-4">
                    <div className="flex flex-col items-center">
-                       <span className="text-[6px] text-gray-500 font-bold tracking-tighter">NR</span>
-                       <div className="w-4 h-2 bg-[#111] border border-[#333]" />
+                       <span className="text-[6px] text-gray-400 font-bold tracking-tighter uppercase">NR</span>
+                       <div className="w-4 h-1.5 bg-[#111] border border-[#333]" />
                    </div>
                    <div className="flex flex-col items-center">
-                       <span className="text-[6px] text-gray-500 font-bold tracking-tighter">CH</span>
-                       <div className="w-4 h-2 bg-red-900 border border-[#333]" />
+                       <span className="text-[6px] text-gray-400 font-bold tracking-tighter uppercase mb-0.5">PLAY</span>
+                       <button 
+                         onClick={previewUrl ? togglePlay : undefined}
+                         onPointerDown={(e) => e.stopPropagation()}
+                         className={`w-10 h-3 rounded-[2px] flex items-center justify-center border border-[#333] shadow-inner ${isPlaying ? 'bg-green-600 shadow-[0_0_8px_#22c55e]' : 'bg-[#111] hover:bg-gray-800'} transition-all ${!previewUrl && 'opacity-50 cursor-not-allowed'}`} 
+                       >
+                         {isPlaying ? <Pause size={8} fill="white" className="text-white" /> : <Play size={8} fill="white" className="text-white" />}
+                       </button>
+                   </div>
+                   <div className="flex flex-col items-center">
+                       <span className="text-[6px] text-gray-400 font-bold tracking-tighter uppercase">CH</span>
+                       <div className="w-4 h-1.5 bg-red-800 border border-[#333]" />
                    </div>
                </div>
-               <div className="font-mono text-[#444] text-[8px] font-bold tracking-widest uppercase">High Bias / 74 Min</div>
+               <div className="font-mono text-[#555] text-[8px] font-bold tracking-widest uppercase">High Bias / 90 min</div>
            </div>
         </div>
+        {previewUrl && <audio ref={audioRef} src={previewUrl} preload="none" />}
       </motion.article>
     );
   }
@@ -562,12 +631,17 @@ export function MusicWidget({ id, userId, song, artist, albumArt: initialAlbumAr
       {!isMinimal && (
         <div className={`flex justify-center gap-md mt-md ${isCassette ? 'text-white/80' : textColor}`}>
           <button className="hover:scale-110 transition-transform"><SkipBack size={18} /></button>
-          <button className={`border rounded-full p-1 hover:opacity-80 transition-all ${isCassette ? 'border-white/20' : borderColor}`}>
-            <Play size={18} fill="currentColor" />
+          <button 
+            onClick={previewUrl ? togglePlay : undefined}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`border rounded-full p-1 hover:opacity-80 transition-all ${isCassette ? 'border-white/20' : borderColor} ${!previewUrl && 'opacity-30 cursor-not-allowed'}`}
+          >
+            {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
           </button>
           <button className="hover:scale-110 transition-transform"><SkipForward size={18} /></button>
         </div>
       )}
+      {previewUrl && <audio ref={audioRef} src={previewUrl} preload="none" />}
     </motion.article>
   );
 }

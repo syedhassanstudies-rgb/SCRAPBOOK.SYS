@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { findMoviePoster } from '../services/movieService';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { sanitizeData } from '../lib/utils';
 
 interface MovieWidgetProps {
   id?: string;
@@ -38,7 +39,22 @@ export function MovieWidget({
   const [posterUrl, setPosterUrl] = useState<string | null>(initialPosterUrl || null);
   const [loading, setLoading] = useState(!initialPosterUrl);
   
-  const activeVariant = variant || (design === 'film-strip' ? 'filmstrip' : design) || (theme === 'retro' ? 'vhs' : theme === 'brutalist' ? 'standard' : theme === 'dvd' ? 'dvd' : theme);
+  const isStandardDesign = !design || design === 'standard';
+  
+  // Only use theme for variant selection if design is standard
+  const activeVariant = variant || (
+    !isStandardDesign 
+      ? (design === 'film-strip' || design === 'filmstrip' ? 'filmstrip' : 
+         design === 'vhs' ? 'vhs' : 
+         design === 'dvd' ? 'dvd' : 'standard')
+      : (theme === 'retro' || theme === 'vhs' ? 'vhs' : 
+         theme === 'dvd' ? 'dvd' : 
+         theme === 'filmstrip' || theme === 'film-strip' ? 'filmstrip' : 'standard')
+  );
+
+  const isVhs = activeVariant === 'vhs';
+  const isFilmstrip = activeVariant === 'filmstrip';
+  const isDvd = activeVariant === 'dvd';
   
   useEffect(() => {
     if (initialPosterUrl) {
@@ -52,9 +68,9 @@ export function MovieWidget({
         // Save back to Firestore if we have IDs
         if (url && id && userId) {
           try {
-            await updateDoc(doc(db, 'users', userId, 'pieces', id), {
+            await updateDoc(doc(db, 'users', userId, 'pieces', id), sanitizeData({
               'data.posterUrl': url
-            });
+            }));
           } catch (e) {
             console.error("Error updating movie poster", e);
           }
@@ -105,14 +121,14 @@ export function MovieWidget({
           initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
           animate={{ opacity: 1, scale: 1, rotate: rotation }}
           whileHover={{ scale: 1.02, zIndex: 50 }}
-          className="w-full max-w-[420px] mb-6 relative group"
+          className="w-full max-w-[420px] min-w-[280px] mb-6 relative group"
       >
-        <div className="bg-[#222] rounded-[4px] border border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative aspect-[1.85/1] p-4 flex flex-col justify-between overflow-hidden">
+        <div className="bg-[#222] rounded-[4px] border border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative aspect-[1.5/1] p-4 flex flex-col justify-between overflow-hidden">
            {/* Texture/Depth */}
            <div className="absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-[#333] to-[#222] border-b border-black/40" />
            
            {/* Bottom Bar: Record/Counter */}
-           <div className="absolute inset-x-8 bottom-4 h-10 bg-[#1a1a1a] border border-[#111] rounded-sm flex items-center justify-between px-4">
+           <div className="absolute inset-x-8 bottom-4 h-10 bg-[#1a1a1a] border border-[#111] rounded-sm flex items-center justify-between px-4 z-10">
                <div className="flex items-center gap-2">
                    <div className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_4px_#ef4444]" />
                    <div className="flex gap-1 ml-2">
@@ -121,37 +137,37 @@ export function MovieWidget({
                        <div className="w-1 h-4 bg-black/60 rounded-[1px]" />
                    </div>
                </div>
-               <div className="font-mono text-[#777] text-xs font-bold tracking-widest">
+               <div className="font-mono text-[#777] text-[10px] font-bold tracking-widest">
                    {year || '2023'}:08:24
                </div>
            </div>
   
            {/* Middle Indent/Reels Area */}
-           <div className="absolute inset-y-10 left-8 right-8 border-2 border-[#111] rounded-sm bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.5)] flex items-center justify-between px-4 overflow-hidden">
+           <div className="absolute inset-y-12 left-8 right-8 border-2 border-[#111] rounded-sm bg-[#1a1a1a] shadow-[inset_0_4px_10px_rgba(0,0,0,0.5)] flex items-center justify-between px-4 overflow-hidden">
                {/* Left Reel */}
-               <div className="w-28 h-28 rounded-[4px] border-2 border-[#222] bg-[#111] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] -ml-2">
-                    <div className="absolute w-20 h-20 rounded-full border border-white/5" />
-                    <div className="w-10 h-10 rounded-full border-2 border-[#222] bg-transparent flex flex-col justify-between items-center py-1">
+               <div className="w-24 h-24 rounded-[4px] border-2 border-[#222] bg-[#111] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] -ml-4">
+                    <div className="absolute w-16 h-16 rounded-full border border-white/5" />
+                    <div className="w-8 h-8 rounded-full border-2 border-[#222] bg-transparent flex flex-col justify-between items-center py-1">
                         <div className="w-full h-px bg-[#222] rotate-45 transform origin-center" />
                         <div className="w-full h-px bg-[#222] -rotate-45 transform origin-center" />
                     </div>
                </div>
                
                {/* Vertical Line */}
-               <div className="w-1 h-full bg-[#111]/80 shadow-[1px_0_2px_rgba(0,0,0,0.5)]" />
+               <div className="w-px h-full bg-[#111]/80 shadow-[1px_0_2px_rgba(0,0,0,0.5)]" />
   
                {/* Right Reel */}
-               <div className="w-28 h-28 rounded-[4px] border-2 border-[#222] bg-[#111] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] -mr-2">
-                    <div className="absolute w-20 h-20 rounded-full border border-white/5" />
-                    <div className="w-10 h-10 rounded-full border-2 border-[#222] bg-transparent flex flex-col justify-center items-center">
+               <div className="w-24 h-24 rounded-[4px] border-2 border-[#222] bg-[#111] flex items-center justify-center relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] -mr-4">
+                    <div className="absolute w-16 h-16 rounded-full border border-white/5" />
+                    <div className="w-8 h-8 rounded-full border-2 border-[#222] bg-transparent flex flex-col justify-center items-center">
                        <div className="w-full h-px bg-[#222]" />
                     </div>
                </div>
            </div>
   
            {/* Central Label added */}
-           <div className="absolute top-10 left-1/2 -translate-x-1/2 w-3/4 h-20 bg-[#f4f4f0] border-2 border-slate-300 rounded-sm shadow-md py-1 px-2 flex gap-3 z-10 rotate-[-1deg]">
-               <div className="w-[48px] h-full bg-black shrink-0 relative overflow-hidden border border-gray-400">
+           <div className="absolute top-8 left-1/2 -translate-x-1/2 w-3/4 h-24 bg-[#f4f4f0] border-2 border-slate-300 rounded-sm shadow-md py-1 px-2 flex gap-3 z-20 rotate-[-1deg]">
+               <div className="w-[54px] h-full bg-black shrink-0 relative overflow-hidden border border-gray-400">
                     {loading ? (
                       <div className="w-full h-full flex items-center justify-center animate-pulse bg-gray-200">
                          <Film size={16} className="opacity-30" />
@@ -165,14 +181,14 @@ export function MovieWidget({
                     )}
                </div>
                <div className="flex flex-col flex-1 justify-center">
-                   <div className="border-b border-red-500/30 pb-0.5 mb-1">
-                      <h3 className="font-sans font-bold text-black uppercase text-sm leading-[1.1] line-clamp-2">{title || 'Unknown Film'}</h3>
-                   </div>
-                   <div className="flex gap-2 font-mono text-[9px] text-gray-600 font-bold uppercase">
-                       <span>{year || '2023'}</span>
-                       <span>•</span>
-                       <span>{rating ? `${rating}/10` : 'RATED'}</span>
-                   </div>
+                    <div className="border-b border-red-500/30 pb-0.5 mb-1">
+                       <h3 className="font-sans font-bold text-black uppercase text-xs leading-[1.1] line-clamp-2">{title || 'Unknown Film'}</h3>
+                    </div>
+                    <div className="flex gap-2 font-mono text-[9px] text-gray-600 font-bold uppercase">
+                        <span>{year || '2023'}</span>
+                        <span>•</span>
+                        <span>{rating ? `${rating}/10` : 'RATED'}</span>
+                    </div>
                </div>
                
                <div className="w-8 flex flex-col gap-1 mt-1 opacity-20">
@@ -183,19 +199,19 @@ export function MovieWidget({
                </div>
            </div>
   
-           {/* Stickers (from ref image) */}
-           <div className="absolute top-4 left-4 bg-blue-600 border border-black px-2 py-1 rotate-[-10deg] shadow-[2px_2px_0_rgba(0,0,0,1)] z-20">
-               <span className="text-[8px] font-mono font-bold text-white uppercase block leading-tight">Video Rental</span>
-               <span className="text-[8px] font-mono font-bold text-white uppercase block leading-tight">Late Fee: $5.00</span>
+           {/* Stickers */}
+           <div className="absolute top-2 left-2 bg-blue-600 border border-black px-2 py-0.5 rotate-[-10deg] shadow-[2px_2px_0_rgba(0,0,0,1)] z-30">
+               <span className="text-[7px] font-mono font-bold text-white uppercase block leading-tight">VIDEO RENTAL</span>
            </div>
   
-           <div className="absolute bottom-16 right-4 bg-[#c1a01c] border border-black px-2 py-0.5 rotate-[5deg] shadow-[2px_2px_0_rgba(0,0,0,1)] z-20">
-               <span className="text-[8px] font-mono font-bold text-[#111] uppercase tracking-wider">Staff Pick</span>
+           <div className="absolute bottom-16 right-2 bg-[#c1a01c] border border-black px-2 py-0.5 rotate-[5deg] shadow-[2px_2px_0_rgba(0,0,0,1)] z-30">
+               <span className="text-[7px] font-mono font-bold text-[#111] uppercase tracking-wider">Staff Pick</span>
            </div>
         </div>
       </motion.article>
     );
   }
+
 
   if (activeVariant === 'filmstrip') {
     return (

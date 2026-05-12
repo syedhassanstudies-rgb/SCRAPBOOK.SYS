@@ -12,7 +12,7 @@ import { TopListWidget } from '../components/TopListWidget';
 import { UserProfile, ScrapbookPieceData } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles } from 'lucide-react';
-import { getContrastText, getContrastBorder } from '../lib/utils';
+import { getContrastText, getContrastBorder, sanitizeData } from '../lib/utils';
 
 interface ProfileViewProps {
   userId: string;
@@ -60,11 +60,11 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
     const maxZ = Math.max(...pieces.map(p => p.style.zIndex || 0), 10);
 
     try {
-      await updateDoc(doc(db, 'users', userId, 'pieces', pieceId), {
+      await updateDoc(doc(db, 'users', userId, 'pieces', pieceId), sanitizeData({
         'style.x': (piece.style.x || 0) + info.offset.x,
         'style.y': (piece.style.y || 0) + info.offset.y,
         'style.zIndex': maxZ + 1
-      });
+      }));
     } catch (error) {
       console.error("Error updating piece position:", error);
     }
@@ -265,9 +265,9 @@ function renderPiece(piece: ScrapbookPieceData, userId: string, profileTheme: st
   const pieceTheme = piece.data.theme || profileTheme;
   switch (piece.type) {
     case 'music':
-      return <MusicWidget key={piece.id} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
+      return <MusicWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'note':
-      return <NoteWidget key={piece.id} {...piece.data} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
+      return <NoteWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'movie':
       return <MovieWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'top-movies':
@@ -275,9 +275,9 @@ function renderPiece(piece: ScrapbookPieceData, userId: string, profileTheme: st
     case 'top-songs':
       return <TopListWidget key={piece.id} id={piece.id} userId={userId} {...piece.data} type="songs" rotation={piece.style.rotate} color={piece.style.color as any} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'polaroid':
-      return <Polaroid key={piece.id} {...piece.data} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
+      return <Polaroid key={piece.id} id={piece.id} userId={userId} {...piece.data} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     case 'decoration':
-      return <Decoration key={piece.id} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} theme={pieceTheme as any} />;
+      return <Decoration key={piece.id} id={piece.id} userId={userId} {...piece.data} rotation={piece.style.rotate} color={piece.style.color as any} theme={pieceTheme as any} />;
     case 'guestbook':
       return <Guestbook key={piece.id} targetUserId={userId} rotation={piece.style.rotate} bgColor={piece.style.bgColor} fontFamily={piece.style.fontFamily} borderStyle={piece.style.borderStyle} theme={pieceTheme as any} />;
     default:

@@ -5,7 +5,7 @@ import { Music, Film, Star, Sparkles } from 'lucide-react';
 import { findMoviePoster } from '../services/movieService';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { getContrastText, getContrastBorder } from '../lib/utils';
+import { getContrastText, getContrastBorder, sanitizeData } from '../lib/utils';
 
 interface TopListWidgetProps {
   id?: string;
@@ -33,9 +33,9 @@ function TopListItem({ item, i, type, id, userId, posters = [], textColor, borde
           if (id && userId) {
             const newPosters = [...posters];
             newPosters[i] = url;
-            updateDoc(doc(db, 'users', userId, 'pieces', id), {
+            updateDoc(doc(db, 'users', userId, 'pieces', id), sanitizeData({
               'data.posters': newPosters
-            }).catch(console.error);
+            })).catch(console.error);
           }
         }
       });

@@ -3,6 +3,7 @@ import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from './firebase';
 import { UserProfile as Profile } from '../types';
+import { sanitizeData } from './utils';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -63,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (data: Partial<Profile>) => {
     if (!user) return;
     const profileRef = doc(db, 'users', user.uid);
-    await setDoc(profileRef, { ...profile, ...data }, { merge: true });
+    await setDoc(profileRef, sanitizeData({ ...profile, ...data }), { merge: true });
   };
 
   return (

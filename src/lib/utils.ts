@@ -42,3 +42,31 @@ export function getContrastBorder(hexColor?: string) {
   
   return luminance > 0.5 ? 'border-paper-outline' : 'border-paper-base/30';
 }
+
+/**
+ * Sanitizes data for Firestore by recursively removing undefined values.
+ * Firestore does not support undefined, but it does support null.
+ */
+export function sanitizeData(data: any): any {
+  if (data === null || data === undefined) return null;
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeData(item));
+  }
+  if (data instanceof Date) {
+    return data;
+  }
+  if (typeof data === 'object') {
+    // Preserve Firestore sentinels like serverTimestamp, FieldValue, etc.
+    if (typeof data.toDate === 'function' || data._methodName || data._delegate || typeof data.isEqual === 'function') {
+        return data; 
+    }
+    const result: any = {};
+    Object.keys(data).forEach(key => {
+      const val = data[key];
+      // Convert undefined to null to prevent "Unsupported field value: undefined"
+      result[key] = val === undefined ? null : sanitizeData(val);
+    });
+    return result;
+  }
+  return data;
+}

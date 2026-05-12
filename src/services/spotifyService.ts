@@ -38,11 +38,11 @@ async function getAccessToken(): Promise<string | null> {
   }
 }
 
-export async function searchSpotifyTrack(query: string): Promise<{ song: string; artist: string; albumArt: string | null } | null> {
+export async function searchSpotifyTrack(query: string): Promise<{ song: string; artist: string; albumArt: string | null; previewUrl?: string | null; trackId?: string | null } | null> {
   const token = await getAccessToken();
   if (!token) {
-    console.warn("Spotify API credentials not configured.");
-    return null;
+    console.warn("Spotify API credentials not configured. Falling back to iTunes API...");
+    return searchItunesTrack(query);
   }
 
   try {
@@ -57,17 +57,52 @@ export async function searchSpotifyTrack(query: string): Promise<{ song: string;
     }
 
     const data = await response.json();
+    let result = null;
     if (data.tracks && data.tracks.items && data.tracks.items.length > 0) {
       const track = data.tracks.items[0];
-      return {
+      result = {
         song: track.name,
         artist: track.artists.map((a: any) => a.name).join(", "),
         albumArt: track.album.images.length > 0 ? track.album.images[0].url : null,
+        previewUrl: track.preview_url || null,
+        trackId: track.id,
+      };
+    }
+    
+    // If no previewUrl, fallback to iTunes
+    if (!result || !result.previewUrl) {
+      const itunesResult = await searchItunesTrack(query);
+      if (itunesResult) {
+        if (!result) return itunesResult;
+        result.previewUrl = itunesResult.previewUrl;
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error("Spotify Search Error:", error);
+    // Fallback on error
+    return searchItunesTrack(query);
+  }
+}
+
+async function searchItunesTrack(query: string): Promise<{ song: string; artist: string; albumArt: string | null; previewUrl?: string | null; trackId?: string | null } | null> {
+  try {
+    const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      const track = data.results[0];
+      return {
+        song: track.trackName,
+        artist: track.artistName,
+        albumArt: track.artworkUrl100 ? track.artworkUrl100.replace('100x100bb', '600x600bb') : null,
+        previewUrl: track.previewUrl || null,
+        trackId: track.trackId?.toString() || null,
       };
     }
     return null;
-  } catch (error) {
-    console.error("Spotify Search Error:", error);
+  } catch (err) {
+    console.error("iTunes Search Error:", err);
     return null;
   }
 }

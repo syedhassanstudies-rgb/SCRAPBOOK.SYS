@@ -4,6 +4,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { ScrapbookPieceData } from '../types';
+import { sanitizeData } from '../lib/utils';
 import { Plus, Trash2, Save, Move, Upload, Search } from 'lucide-react';
 import { MusicWidget } from '../components/MusicWidget';
 import { NoteWidget } from '../components/NoteWidget';
@@ -70,7 +71,7 @@ export function EditorView() {
     };
 
     try {
-      await addDoc(collection(db, 'users', user.uid, 'pieces'), {
+      await addDoc(collection(db, 'users', user.uid, 'pieces'), sanitizeData({
         type,
         data: defaultData[type],
         style: {
@@ -81,7 +82,7 @@ export function EditorView() {
           color: 'secondary',
           column: type === 'guestbook' ? 'full' : (pieces.length % 2 === 0 ? 'left' : 'right')
         }
-      });
+      }));
       setIsAdding(false);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/pieces`);
@@ -102,9 +103,9 @@ export function EditorView() {
     const piece = pieces.find(p => p.id === pieceId);
     if (!piece) return;
     try {
-      await updateDoc(doc(db, 'users', user.uid, 'pieces', pieceId), {
+      await updateDoc(doc(db, 'users', user.uid, 'pieces', pieceId), sanitizeData({
         data: { ...piece.data, ...newData }
-      });
+      }));
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}/pieces/${pieceId}`);
     }
@@ -115,9 +116,9 @@ export function EditorView() {
     const piece = pieces.find(p => p.id === pieceId);
     if (!piece) return;
     try {
-      await updateDoc(doc(db, 'users', user.uid, 'pieces', pieceId), {
+      await updateDoc(doc(db, 'users', user.uid, 'pieces', pieceId), sanitizeData({
         style: { ...piece.style, ...newStyle }
-      });
+      }));
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}/pieces/${pieceId}`);
     }
@@ -147,9 +148,9 @@ export function EditorView() {
     
     try {
       await Promise.all(newPieces.map((piece, i) => 
-        updateDoc(doc(db, 'users', user!.uid, 'pieces', piece.id), {
+        updateDoc(doc(db, 'users', user!.uid, 'pieces', piece.id), sanitizeData({
           'style.y': i * 10
-        })
+        }))
       ));
     } catch (error) {
        console.error("Error updating positions:", error);
@@ -212,7 +213,7 @@ export function EditorView() {
       setHeaderState(newHeaderState);
       
       const piecesCollection = collection(db, 'users', user.uid, 'pieces');
-      await Promise.all(newPieces.map(p => addDoc(piecesCollection, p)));
+      await Promise.all(newPieces.map(p => addDoc(piecesCollection, sanitizeData(p))));
     } catch (e) {
       console.error(e);
       alert("Failed to apply template.");
@@ -451,12 +452,15 @@ export function EditorView() {
                     updatePieceData(piece.id, {
                       song: data.song,
                       artist: data.artist,
-                      albumArt: data.albumArt || undefined
+                      albumArt: data.albumArt || undefined,
+                      previewUrl: data.previewUrl || undefined,
+                      trackId: data.trackId || undefined
                     });
                   }} />
                   <EditorInput label="Song" value={piece.data.song} onChange={v => updatePieceData(piece.id, {song: v})} />
                   <EditorInput label="Artist" value={piece.data.artist} onChange={v => updatePieceData(piece.id, {artist: v})} />
                   <EditorInput label="Album Art URL (Optional)" value={piece.data.albumArt || ''} onChange={v => updatePieceData(piece.id, {albumArt: v})} />
+                  <EditorInput label="Spotify Preview URL (Optional)" value={piece.data.previewUrl || ''} onChange={v => updatePieceData(piece.id, {previewUrl: v})} />
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold uppercase">Design Style</label>
                     <select 
@@ -466,6 +470,7 @@ export function EditorView() {
                     >
                       <option value="standard">Standard</option>
                       <option value="cassette">Tape Cassette</option>
+                      <option value="vhs">VHS Tape</option>
                       <option value="vinyl">Vinyl Record</option>
                       <option value="cd">CD</option>
                       <option value="mini-disc">Mini Disc</option>
@@ -820,7 +825,7 @@ function MovieSearchInput({ onResult }: { onResult: (data: { title: string; year
   );
 }
 
-function MusicSearchInput({ onResult }: { onResult: (data: { song: string; artist: string; albumArt: string | null }) => void }) {
+function MusicSearchInput({ onResult }: { onResult: (data: { song: string; artist: string; albumArt: string | null; previewUrl?: string | null; trackId?: string | null }) => void }) {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
