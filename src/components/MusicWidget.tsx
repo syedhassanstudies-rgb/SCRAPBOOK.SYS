@@ -574,12 +574,13 @@ export function MusicWidget({ id, userId, song, artist, genre, albumArt: initial
         relative w-full max-w-xs transition-all mb-4 group ${fontClass}
         ${isMinimal ? `bg-transparent border-l-2 ${borderClass} ${borderColor} p-2 ${textColor}` : ''}
         ${isY2K ? `p-md rounded-2xl border-2 border-fuchsia-400 bg-gradient-to-tr from-purple-500/20 to-pink-400/20 backdrop-blur-md shadow-[0_0_15px_rgba(232,121,249,0.3)] text-fuchsia-900 border-dashed` : ''}
-        ${isBrutalist ? `border-4 border-black p-4 shadow-[6px_6px_0_0_rgba(0,0,0,1)] uppercase font-bold text-black` : ''}
+        ${isBrutalist ? `border-4 border-black p-4 shadow-[6px_6px_0_0_rgba(0,0,0,1)] uppercase font-bold text-black bg-white` : ''}
+        ${isStandard ? `border-2 border-black p-md rounded-[8px] bg-white text-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]` : ''}
         ${isRetro ? `border-2 ${borderClass} ${borderColor} p-md analog-shadow ${textColor}` : ''}
       `}
-      style={{ backgroundColor: (isMinimal || isY2K) ? undefined : effectiveBg }}
+      style={{ backgroundColor: (isMinimal || isY2K || isBrutalist || isStandard) ? undefined : effectiveBg }}
     >
-      {!isMinimal && !isY2K && (
+      {isRetro && (
         <Tape color={color} rotation={0} className="-top-3 left-1/2 -translate-x-1/2 w-12 h-5 opacity-80" />
       )}
       
@@ -596,29 +597,29 @@ export function MusicWidget({ id, userId, song, artist, genre, albumArt: initial
         </div>
       )}
 
-      {!isMinimal && !isY2K && (
-        <div className={`flex items-center justify-between border-b border-dashed ${borderColor} pb-sm mb-sm opacity-60`}>
-          <span className="font-bold text-[10px] uppercase">Now Playing</span>
-          <Music size={14} />
+      {(isRetro || isBrutalist || isStandard || isMinimal) && (
+        <div className={`flex items-center justify-between border-b ${isStandard ? 'border-solid border-black' : isBrutalist ? 'border-solid border-black' : isMinimal ? 'border-solid border-gray-200' : `border-dashed ${borderColor}`} pb-sm mb-sm opacity-60`}>
+          <span className={`font-bold text-[10px] uppercase ${isStandard || isBrutalist ? 'text-black opacity-100' : ''}`}>Now Playing</span>
+          <Music size={14} className={isStandard || isBrutalist ? 'text-black opacity-100' : ''} />
         </div>
       )}
 
-      <div className={`flex items-center gap-md`}>
+      <div className={`flex items-center gap-md mt-2`}>
         <div className={`
-          shrink-0 flex items-center justify-center w-16 h-16 bg-white border ${isY2K ? 'border-pink-300 rounded-lg shadow-inner' : borderColor}
+          shrink-0 flex items-center justify-center w-16 h-16 bg-white border ${isY2K ? 'border-pink-300 rounded-lg shadow-inner' : isStandard ? 'border-black shadow-sm' : isBrutalist ? 'border-black border-2' : borderColor}
           ${isCassette ? 'grayscale contrast-125' : ''}
         `}>
           {loading ? (
-             <div className={`flex items-center justify-center animate-pulse w-10 h-10 border-2 ${borderColor} rounded-full`}>
-               <Disc size={20} className="opacity-30" />
+             <div className={`flex items-center justify-center animate-pulse w-10 h-10 border-2 ${isStandard || isBrutalist ? 'border-black' : borderColor} rounded-full`}>
+               <Disc size={20} className="opacity-30 text-black" />
              </div>
           ) : albumArt ? (
             <div className={`relative w-full h-full`}>
               <img src={albumArt} alt={song} className={`object-cover w-full h-full`} />
             </div>
           ) : (
-            <div className={`flex items-center justify-center relative w-10 h-10 border-2 ${borderColor} rounded-full`}>
-               <div className={`w-2 h-2 rounded-full ${borderColor.replace('border-', 'bg-').replace('/30', '')}`} />
+            <div className={`flex items-center justify-center relative w-10 h-10 border-2 ${isStandard ? 'border-black' : borderColor} rounded-full`}>
+               <div className={`w-2 h-2 rounded-full ${isStandard ? 'bg-black' : borderColor.replace('border-', 'bg-').replace('/30', '')}`} />
             </div>
           )}
         </div>
@@ -630,12 +631,12 @@ export function MusicWidget({ id, userId, song, artist, genre, albumArt: initial
       </div>
 
       {!isMinimal && (
-        <div className={`flex justify-center gap-md mt-md ${isCassette ? 'text-white/80' : textColor}`}>
+        <div className={`flex justify-center gap-md mt-md ${isCassette ? 'text-white/80' : isStandard || isBrutalist ? 'text-black' : textColor}`}>
           <button className="hover:scale-110 transition-transform"><SkipBack size={18} /></button>
           <button 
             onClick={previewUrl ? togglePlay : undefined}
             onPointerDown={(e) => e.stopPropagation()}
-            className={`border rounded-full p-1 hover:opacity-80 transition-all ${isCassette ? 'border-white/20' : borderColor} ${!previewUrl && 'opacity-30 cursor-not-allowed'}`}
+            className={`border rounded-full p-1 hover:opacity-80 transition-all ${isCassette ? 'border-white/20' : isStandard || isBrutalist ? 'border-black shadow-sm' : borderColor} ${!previewUrl && 'opacity-30 cursor-not-allowed'}`}
           >
             {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
           </button>

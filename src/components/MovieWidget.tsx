@@ -43,9 +43,16 @@ export function MovieWidget({
   
   const isStandardDesign = !design || design === 'standard';
   
+  // Theme styling for standard variant
+  const actualTheme = design && ['minimal', 'brutalist', 'y2k', 'standard'].includes(design) ? design : theme;
+  const isMinimal = actualTheme === 'minimal';
+  const isBrutalist = actualTheme === 'brutalist';
+  const isY2k = actualTheme === 'y2k';
+  const isStandardTheme = actualTheme === 'standard' || (!isMinimal && !isBrutalist && !isY2k);
+
   // Only use theme for variant selection if design is standard
   const activeVariant = variant || (
-    !isStandardDesign 
+    !isStandardDesign && !['minimal', 'brutalist', 'y2k', 'standard'].includes(design!)
       ? (design === 'film-strip' || design === 'filmstrip' ? 'filmstrip' : 
          design === 'vhs' ? 'vhs' : 
          design === 'dvd' ? 'dvd' : 'standard')
@@ -57,7 +64,7 @@ export function MovieWidget({
   const isVhs = activeVariant === 'vhs';
   const isFilmstrip = activeVariant === 'filmstrip';
   const isDvd = activeVariant === 'dvd';
-  
+
   useEffect(() => {
     if (initialPosterUrl) {
       setPosterUrl(initialPosterUrl);
@@ -89,28 +96,41 @@ export function MovieWidget({
           whileHover={{ scale: 1.02, zIndex: 50 }}
           className="w-full max-w-[320px] mb-6 relative group font-sans"
       >
-        <div className="bg-white border-2 border-black p-4 shadow-[6px_6px_0_0_rgba(0,0,0,1)] flex gap-4 overflow-hidden relative">
-           <div className="w-16 h-24 bg-gray-100 shrink-0 border border-black/10 overflow-hidden relative">
+        <div className={`
+           flex gap-4 overflow-hidden relative
+           ${isY2k ? 'p-4 rounded-2xl border-2 border-pink-300 bg-gradient-to-br from-fuchsia-50/80 to-pink-100/80 backdrop-blur-sm shadow-[0_0_15px_rgba(255,105,180,0.3)]' :
+             isMinimal ? 'p-4 bg-white/80 backdrop-blur-md rounded-xl border border-black/5 shadow-xl' :
+             isBrutalist ? 'bg-white border-4 border-black p-4 shadow-[8px_8px_0_0_rgba(0,0,0,1)] uppercase' :
+             'bg-white border-2 border-black p-4 shadow-[6px_6px_0_0_rgba(0,0,0,1)]'}
+        `}>
+           <div className={`
+             w-16 h-24 shrink-0 overflow-hidden relative
+             ${isY2k ? 'rounded-lg border-2 border-pink-200' :
+               isMinimal ? 'rounded-md shadow-md' :
+               'bg-gray-100 border border-black/10'}
+           `}>
               {loading ? (
                 <div className="w-full h-full flex items-center justify-center animate-pulse">
-                   <Film size={20} className="text-black/20" />
+                   <Film size={20} className={isY2k ? "text-fuchsia-300" : "text-black/20"} />
                 </div>
               ) : posterUrl ? (
                 <img src={posterUrl} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                   <Film size={20} className="text-black/10" />
+                   <Film size={20} className={isY2k ? "text-fuchsia-300" : "text-black/10"} />
                 </div>
               )}
            </div>
            <div className="flex flex-col justify-center min-w-0">
-              <h3 className="font-bold text-lg leading-tight truncate text-black mb-1">{title}</h3>
-              <div className="flex items-center gap-2 text-xs text-gray-500 font-bold uppercase tracking-wider">
+              <h3 className={`font-bold leading-tight truncate mb-1 ${isBrutalist ? 'text-xl text-black' : isY2k ? 'text-lg text-fuchsia-700' : isMinimal ? 'text-lg text-gray-800' : 'text-lg text-black'}`}>{title}</h3>
+              <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${isY2k ? 'text-pink-500' : 'text-gray-500'}`}>
                   <span>{year}</span>
                   <span>•</span>
-                  <span className="flex items-center gap-1 text-red-600"><Play size={10} fill="currentColor" /> {rating?.endsWith('/10') ? rating : `${rating}/10`}</span>
+                  <span className={`flex items-center gap-1 ${isY2k ? 'text-fuchsia-500' : isMinimal ? 'text-gray-900' : 'text-red-600'}`}>
+                     <Play size={10} fill="currentColor" /> {rating?.endsWith('/10') ? rating : `${rating}/10`}
+                  </span>
               </div>
-              <div className="mt-2 text-[10px] text-gray-400 font-mono italic truncate">#{genre ? genre.toLowerCase().replace(/\s+/g, '-') : 'movie-archive'}</div>
+              <div className={`mt-2 text-[10px] font-mono italic truncate ${isY2k ? 'text-purple-400' : 'text-gray-400'}`}>#{genre ? genre.toLowerCase().replace(/\s+/g, '-') : 'movie-archive'}</div>
            </div>
         </div>
       </motion.article>
@@ -123,7 +143,7 @@ export function MovieWidget({
           initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
           animate={{ opacity: 1, scale: 1, rotate: rotation }}
           whileHover={{ scale: 1.02, zIndex: 50 }}
-          className="w-full max-w-[420px] min-w-[280px] mb-6 relative group"
+          className="w-full max-w-[420px] mb-6 relative group"
       >
         <div className="bg-[#222] rounded-[4px] border border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative aspect-[1.5/1] p-4 flex flex-col justify-between overflow-hidden">
            {/* Texture/Depth */}

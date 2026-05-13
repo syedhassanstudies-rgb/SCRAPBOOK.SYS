@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, collection, query, orderBy, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Polaroid } from '../components/Polaroid';
@@ -24,6 +24,8 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
   const [pieces, setPieces] = useState<ScrapbookPieceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const boundsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -56,13 +58,11 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
     const piece = pieces.find(p => p.id === pieceId);
     if (!piece) return;
 
-    // Find highest zIndex
     const maxZ = Math.max(...pieces.map(p => p.style.zIndex || 0), 10);
-
     try {
       await updateDoc(doc(db, 'users', userId, 'pieces', pieceId), sanitizeData({
-        'style.x': (piece.style.x || 0) + info.offset.x,
-        'style.y': (piece.style.y || 0) + info.offset.y,
+        'style.offsetX': (piece.style.offsetX || 0) + info.offset.x,
+        'style.offsetY': (piece.style.offsetY || 0) + info.offset.y,
         'style.zIndex': maxZ + 1
       }));
     } catch (error) {
@@ -78,9 +78,9 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
 
   const renderDraggablePiece = (piece: ScrapbookPieceData) => {
     const scaleClasses = {
-      sm: 'scale-75 origin-top-left',
+      sm: 'scale-90 origin-center',
       md: 'scale-100',
-      lg: 'scale-125'
+      lg: 'scale-105 origin-center'
     };
     const scaleClass = scaleClasses[(piece.style.size as 'sm'|'md'|'lg') || 'md'];
 
@@ -95,13 +95,15 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
       <motion.div
         key={piece.id}
         drag={isOwner}
+        dragConstraints={boundsRef}
+        dragElastic={0.1}
         dragMomentum={false}
         onDragEnd={(_, info) => handleDragEnd(piece.id, info)}
-        whileDrag={{ scale: 1.05, zIndex: 100 }}
-        className={`${isOwner ? 'cursor-grab active:cursor-grabbing' : ''} h-fit w-fit ${scaleClass} ${alignClass}`}
+        whileDrag={{ scale: 1.02, zIndex: 500 }}
+        className={`${isOwner ? 'cursor-grab active:cursor-grabbing' : ''} relative z-10 w-fit shrink-0 max-w-[100vw] ${scaleClass} ${alignClass} flex justify-center`}
         style={{
-          x: piece.style.x || 0,
-          y: piece.style.y || 0,
+          x: piece.style.offsetX || 0,
+          y: piece.style.offsetY || 0,
           zIndex: piece.style.zIndex || 1
         }}
       >
@@ -149,11 +151,17 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
                            'none'
         }}
       />
-      <div className="max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop py-xl flex flex-col gap-xl relative z-10 w-full min-h-screen">
       
+      {/* Hidden bounds for drag constraints without expanding page scroll */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -1 }}>
+        <div ref={boundsRef} className="absolute top-[-20px] left-[-20px] right-[-20px] h-[20000px] md:top-[-50px] md:left-[-50px] md:right-[-50px]" />
+      </div>
+
+      <div className="max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop py-xl flex flex-col gap-xl relative z-10 w-full min-h-screen">
+        
       {/* Hero Section */}
       <section 
-        className={`relative self-center w-full max-w-2xl p-lg md:p-xl mt-md mb-xl z-20 transition-all duration-500 hover:rotate-0 ${headerTextColor} ${themeClasses[theme]}`}
+        className={`relative self-center w-full max-w-3xl p-xl md:p-2xl mt-xl mb-2xl z-20 transition-all duration-500 ${headerTextColor} ${themeClasses[theme]}`}
         style={{ backgroundColor: theme === 'y2k' ? undefined : headerBgColor }}
       >
         {theme === 'retro' && (
@@ -222,7 +230,7 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
       </section>
 
       {/* Grid of pieces */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-xl relative">
+      <div ref={containerRef} className="grid grid-cols-1 md:grid-cols-12 gap-xl relative">
         <div className="col-span-1 md:col-span-5 flex flex-col gap-xl z-10">
           {pieces.filter(p => p.style.column === 'left' || (!p.style.column && p.type !== 'guestbook' && pieces.indexOf(p) % 2 === 0)).map(piece => renderDraggablePiece(piece))}
           {/* Default items if empty */}

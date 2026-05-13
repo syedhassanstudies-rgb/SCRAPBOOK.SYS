@@ -15,6 +15,7 @@
 
 @layer base {
   body {
+    overflow-x: hidden;
     @apply bg-paper-base text-paper-ink antialiased font-mono;
     background-image: 
         linear-gradient(#e4e2e1 1px, transparent 1px),
@@ -63,6 +64,30 @@
       0% 2%, 2% 0%, 98% 1%, 100% 3%, 
       99% 97%, 97% 100%, 3% 99%, 0% 98%
     );
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+    border: none;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    border: none;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
 }
 

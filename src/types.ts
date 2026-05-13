@@ -10,6 +10,8 @@ export interface ScrapbookPieceData {
   style: {
     x: number;
     y: number;
+    offsetX?: number;
+    offsetY?: number;
     rotate: number;
     zIndex: number;
     color?: 'secondary' | 'tertiary' | 'primary' | 'yellow';
@@ -33,7 +35,7 @@ export interface UserProfile {
   backgroundColor?: string;
   backgroundPattern?: 'none' | 'dots' | 'grid' | 'lines';
   headerBackgroundColor?: string;
-  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k';
+  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'standard';
   titleFontFamily?: 'sans' | 'serif' | 'mono';
   titleFontSize?: 'sm' | 'md' | 'lg' | 'xl';
   fontFamily?: 'sans' | 'serif' | 'mono';

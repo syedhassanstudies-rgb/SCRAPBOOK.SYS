@@ -50,7 +50,7 @@ export function getContrastBorder(hexColor?: string) {
 export function sanitizeData(data: any): any {
   if (data === null || data === undefined) return null;
   if (Array.isArray(data)) {
-    return data.map(item => sanitizeData(item));
+    return Array.from(data).map(item => item === undefined ? null : sanitizeData(item));
   }
   if (data instanceof Date) {
     return data;
@@ -63,8 +63,9 @@ export function sanitizeData(data: any): any {
     const result: any = {};
     Object.keys(data).forEach(key => {
       const val = data[key];
-      // Convert undefined to null to prevent "Unsupported field value: undefined"
-      result[key] = val === undefined ? null : sanitizeData(val);
+      if (val !== undefined) {
+        result[key] = sanitizeData(val);
+      }
     });
     return result;
   }

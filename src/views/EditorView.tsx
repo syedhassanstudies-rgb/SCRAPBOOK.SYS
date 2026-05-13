@@ -361,6 +361,7 @@ export function EditorView() {
                       <option value="minimal">Minimal Modern</option>
                       <option value="brutalist">Brutalist</option>
                       <option value="y2k">Y2K Cyber</option>
+                      <option value="standard">Standard Default</option>
                     </select>
                   </div>
                </div>
@@ -548,6 +549,30 @@ export function EditorView() {
                 <>
                    <EditorInput label="Title" value={piece.data.title} onChange={v => updatePieceData(piece.id, {title: v})} />
                    <EditorInput label="Items (comma separated)" value={(piece.data.items || []).join(', ')} onChange={v => updatePieceData(piece.id, {items: v.split(',').map(s => s.trim())})} />
+                   <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase">Design Style</label>
+                    <select 
+                      value={piece.data.theme || 'standard'}
+                      onChange={e => updatePieceData(piece.id, {theme: e.target.value})}
+                      className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                    >
+                      <option value="standard">Standard</option>
+                      {piece.type === 'top-movies' && (
+                        <>
+                          <option value="vhs">VHS Slipcase</option>
+                          <option value="dvd">DVD Back Cover</option>
+                          <option value="filmstrip">Filmstrip</option>
+                        </>
+                      )}
+                      {piece.type === 'top-songs' && (
+                        <>
+                          <option value="cassette">Cassette J-Card</option>
+                          <option value="cd">CD Jewel Case</option>
+                          <option value="vinyl">Vinyl Sleeve</option>
+                        </>
+                      )}
+                    </select>
+                   </div>
                 </>
               )}
               
@@ -682,6 +707,7 @@ export function EditorView() {
                      <option value="minimal">Minimal Modern</option>
                      <option value="brutalist">Brutalist</option>
                      <option value="y2k">Y2K Cyber</option>
+                     <option value="standard">Standard Default</option>
                    </select>
                 </div>
               </div>
