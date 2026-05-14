@@ -118,25 +118,48 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
   
   const theme = profile.theme || 'retro';
   
-  const themeClasses = {
+  const themeClasses: Record<string, string> = {
     retro: `border ${headerBorderColor} analog-shadow-lg paper-edge -rotate-1`,
     minimal: `rounded-3xl border border-opacity-20 shadow-2xl backdrop-blur-md rotate-0`,
     brutalist: `border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] uppercase tracking-wider rotate-0 rounded-none`,
-    y2k: `rounded-[2rem] border-2 border-pink-300 shadow-[0_0_20px_rgba(255,105,180,0.3)] bg-gradient-to-br from-white/40 to-white/10 backdrop-blur-lg rotate-0`
+    y2k: `rounded-[2rem] border-2 border-pink-300 shadow-[0_0_20px_rgba(255,105,180,0.3)] bg-gradient-to-br from-white/40 to-white/10 backdrop-blur-lg rotate-0`,
+    gothic: `border-y-4 ${headerBorderColor} border-double shadow-[0_0_30px_rgba(0,0,0,0.8)] backdrop-blur-md rounded-sm rotate-0`,
+    medieval: `border-8 ${headerBorderColor} shadow-2xl rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md rotate-0 bg-opacity-90`,
+    scrapbook: `border-0 shadow-xl rotate-2 paper-edge p-8 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAiLz4KPHBhdGggZD0iTTAgMEg0VjRIMEoiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPgo8L3N2Zz4=')]`
   };
   
-  const avatarThemeClasses = {
+  const avatarThemeClasses: Record<string, string> = {
     retro: `p-2 pb-8 border ${headerBorderColor} analog-shadow inline-block relative rotate-[-2deg]`,
     minimal: `p-1 rounded-full border-4 border-white shadow-xl rotate-0`,
     brutalist: `border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] rotate-0 rounded-none`,
-    y2k: `rounded-full border-4 border-purple-300 p-1 bg-gradient-to-tr from-pink-300 to-purple-300 rotate-0`
+    y2k: `rounded-full border-4 border-purple-300 p-1 bg-gradient-to-tr from-pink-300 to-purple-300 rotate-0`,
+    gothic: `p-1 border-2 border-double ${headerBorderColor} rounded-full rotate-0 shadow-[0_0_15px_rgba(0,0,0,0.5)]`,
+    medieval: `p-2 border-4 ${headerBorderColor} shadow-xl rotate-0 rounded-tl-xl rounded-br-xl rounded-tr-md rounded-bl-md`,
+    scrapbook: `p-3 pb-6 bg-white border border-gray-200 shadow-md rotate-[-4deg]`
   };
   
-  const avatarImgClasses = {
+  const avatarImgClasses: Record<string, string> = {
     retro: `w-32 h-32 md:w-40 md:h-40 object-cover grayscale contrast-125 sepia-[.2] transition-colors duration-700 hover:grayscale-0 hover:contrast-100 hover:sepia-0`,
     minimal: `w-32 h-32 md:w-40 md:h-40 object-cover rounded-full`,
     brutalist: `w-32 h-32 md:w-40 md:h-40 object-cover grayscale contrast-150`,
-    y2k: `w-32 h-32 md:w-40 md:h-40 object-cover rounded-full`
+    y2k: `w-32 h-32 md:w-40 md:h-40 object-cover rounded-full`,
+    gothic: `w-32 h-32 md:w-40 md:h-40 object-cover rounded-full grayscale-[0.8] contrast-125`,
+    medieval: `w-32 h-32 md:w-40 md:h-40 object-cover rounded-tl-lg rounded-br-lg rounded-tr-sm rounded-bl-sm sepia-[0.5] contrast-110`,
+    scrapbook: `w-32 h-32 md:w-40 md:h-40 object-cover`
+  };
+
+  const patternColor = headerTextColor === 'text-paper-ink' ? '%23000000' : '%23ffffff';
+  const patternOpacity = '0.08';
+  const getPatternUrl = (pattern?: string) => {
+    switch(pattern) {
+      case 'dots': return `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='${patternColor}' fill-opacity='${patternOpacity}' fill-rule='evenodd'%3E%3Ccircle cx='2' cy='2' r='2'/%3E%3C/g%3E%3C/svg%3E")`;
+      case 'grid': return `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20z' fill='${patternColor}' fill-opacity='${patternOpacity}' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      case 'lines': return `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v1H0z' fill='${patternColor}' fill-opacity='${patternOpacity}' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      case 'diagonal': return `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20L20 0H18L0 18V20ZM20 20V18L18 20H20ZM0 0V2L2 0H0Z' fill='${patternColor}' fill-opacity='${patternOpacity}' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      case 'cross': return `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9 9h2v2H9V9z' fill='${patternColor}' fill-opacity='0.15' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      case 'checkerboard': return `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h10v10H0V0zm10 10h10v10H10V10z' fill='${patternColor}' fill-opacity='0.04' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      default: return 'none';
+    }
   };
 
   return (
@@ -145,10 +168,7 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
         className="fixed inset-0 min-h-screen z-[-1] transition-colors duration-1000"
         style={{ 
           backgroundColor: profile.backgroundColor || 'transparent',
-          backgroundImage: profile.backgroundPattern === 'dots' ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'2\'/%3E%3C/g%3E%3C/svg%3E")' :
-                           profile.backgroundPattern === 'grid' ? 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20z\' fill=\'%23000000\' fill-opacity=\'0.02\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' :
-                           profile.backgroundPattern === 'lines' ? 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v1H0z\' fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' :
-                           'none'
+          backgroundImage: getPatternUrl(profile.backgroundPattern)
         }}
       />
       

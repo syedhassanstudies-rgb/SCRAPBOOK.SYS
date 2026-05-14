@@ -21,7 +21,7 @@ interface MusicWidgetProps {
   bgColor?: string;
   fontFamily?: string;
   borderStyle?: string;
-  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'vhs' | 'cd' | 'cassette' | 'vinyl' | 'mini-disc' | 'standard';
+  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'vhs' | 'cd' | 'cassette' | 'vinyl' | 'mini-disc' | 'standard' | 'gothic' | 'medieval' | 'scrapbook' | string;
 }
 
 export function MusicWidget({ id, userId, song, artist, genre, albumArt: initialAlbumArt, previewUrl: initialPreviewUrl, rotation = 2, design = 'standard', color = 'tertiary', bgColor, fontFamily, borderStyle, theme = 'retro' }: MusicWidgetProps) {
@@ -110,9 +110,12 @@ export function MusicWidget({ id, userId, song, artist, genre, albumArt: initial
   const isMinimal = activeStyle === 'minimal';
   const isY2K = activeStyle === 'y2k';
   const isBrutalist = activeStyle === 'brutalist';
+  const isGothic = activeStyle === 'gothic';
+  const isMedieval = activeStyle === 'medieval';
+  const isScrapbook = activeStyle === 'scrapbook';
   const isRetro = activeStyle === 'retro';
   
-  const isStandard = !isVhs && !isCd && !isMiniDisc && !isVinyl && !isCassette && !isMinimal && !isY2K && !isBrutalist && !isRetro;
+  const isStandard = !isVhs && !isCd && !isMiniDisc && !isVinyl && !isCassette && !isMinimal && !isY2K && !isBrutalist && !isGothic && !isMedieval && !isScrapbook && !isRetro;
   
   const cassetteBg = bgColor || '#2a2a2a';
   const vinylLabelBg = bgColor || '#ff4444';
@@ -558,7 +561,9 @@ export function MusicWidget({ id, userId, song, artist, genre, albumArt: initial
     isMiniDisc ? '#1a1a1a' :
     isVinyl ? '#fdfbf7' :
     isY2K ? '#fcd5ce' :
-    bgColor || (isBrutalist ? '#fff' : '#fdfcf8');
+    isGothic ? '#111' :
+    isMedieval ? '#d4c3a9' :
+    bgColor || (isBrutalist || isScrapbook ? '#fff' : '#fdfcf8');
 
   const textColor = getContrastText(effectiveBg);
   const borderColor = getContrastBorder(effectiveBg);
@@ -575,10 +580,13 @@ export function MusicWidget({ id, userId, song, artist, genre, albumArt: initial
         ${isMinimal ? `bg-transparent border-l-2 ${borderClass} ${borderColor} p-2 ${textColor}` : ''}
         ${isY2K ? `p-md rounded-2xl border-2 border-fuchsia-400 bg-gradient-to-tr from-purple-500/20 to-pink-400/20 backdrop-blur-md shadow-[0_0_15px_rgba(232,121,249,0.3)] text-fuchsia-900 border-dashed` : ''}
         ${isBrutalist ? `border-4 border-black p-4 shadow-[6px_6px_0_0_rgba(0,0,0,1)] uppercase font-bold text-black bg-white` : ''}
+        ${isGothic ? `border border-y-4 border-double ${borderColor} p-4 bg-black/90 shadow-[0_0_15px_rgba(0,0,0,0.8)] text-red-100` : ''}
+        ${isMedieval ? `border-[4px] border-[#8b7355] p-5 shadow-xl rounded-tr-xl rounded-bl-xl text-[#4a3b2c]` : ''}
+        ${isScrapbook ? `border border-gray-200 p-4 bg-white shadow-md -rotate-1 text-gray-800` : ''}
         ${isStandard ? `border-2 border-black p-md rounded-[8px] bg-white text-black shadow-[4px_4px_0_0_rgba(0,0,0,1)]` : ''}
         ${isRetro ? `border-2 ${borderClass} ${borderColor} p-md analog-shadow ${textColor}` : ''}
       `}
-      style={{ backgroundColor: (isMinimal || isY2K || isBrutalist || isStandard) ? undefined : effectiveBg }}
+      style={{ backgroundColor: (isMinimal || isY2K || isBrutalist || isStandard || isGothic || isMedieval || isScrapbook) ? undefined : effectiveBg }}
     >
       {isRetro && (
         <Tape color={color} rotation={0} className="-top-3 left-1/2 -translate-x-1/2 w-12 h-5 opacity-80" />

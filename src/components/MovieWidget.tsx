@@ -44,15 +44,18 @@ export function MovieWidget({
   const isStandardDesign = !design || design === 'standard';
   
   // Theme styling for standard variant
-  const actualTheme = design && ['minimal', 'brutalist', 'y2k', 'standard'].includes(design) ? design : theme;
+  const actualTheme = design && ['minimal', 'brutalist', 'y2k', 'gothic', 'medieval', 'scrapbook', 'standard'].includes(design) ? design : theme;
   const isMinimal = actualTheme === 'minimal';
   const isBrutalist = actualTheme === 'brutalist';
   const isY2k = actualTheme === 'y2k';
-  const isStandardTheme = actualTheme === 'standard' || (!isMinimal && !isBrutalist && !isY2k);
+  const isGothic = actualTheme === 'gothic';
+  const isMedieval = actualTheme === 'medieval';
+  const isScrapbook = actualTheme === 'scrapbook';
+  const isStandardTheme = actualTheme === 'standard' || (!isMinimal && !isBrutalist && !isY2k && !isGothic && !isMedieval && !isScrapbook);
 
   // Only use theme for variant selection if design is standard
   const activeVariant = variant || (
-    !isStandardDesign && !['minimal', 'brutalist', 'y2k', 'standard'].includes(design!)
+    !isStandardDesign && !['minimal', 'brutalist', 'y2k', 'gothic', 'medieval', 'scrapbook', 'standard'].includes(design!)
       ? (design === 'film-strip' || design === 'filmstrip' ? 'filmstrip' : 
          design === 'vhs' ? 'vhs' : 
          design === 'dvd' ? 'dvd' : 'standard')
@@ -101,36 +104,42 @@ export function MovieWidget({
            ${isY2k ? 'p-4 rounded-2xl border-2 border-pink-300 bg-gradient-to-br from-fuchsia-50/80 to-pink-100/80 backdrop-blur-sm shadow-[0_0_15px_rgba(255,105,180,0.3)]' :
              isMinimal ? 'p-4 bg-white/80 backdrop-blur-md rounded-xl border border-black/5 shadow-xl' :
              isBrutalist ? 'bg-white border-4 border-black p-4 shadow-[8px_8px_0_0_rgba(0,0,0,1)] uppercase' :
+             isGothic ? 'p-4 bg-black/90 border-y-2 border-double border-[color:var(--fallback-bc,#4b5563)] text-red-100 shadow-[0_0_15px_rgba(0,0,0,0.8)]' :
+             isMedieval ? 'p-4 bg-[#d4c3a9]/90 border-[4px] border-[#8b7355] text-[#4a3b2c] shadow-lg rounded-bl-xl rounded-tr-xl' :
+             isScrapbook ? 'p-4 bg-white border border-gray-200 text-gray-800 shadow-sm -rotate-1' :
              'bg-white border-2 border-black p-4 shadow-[6px_6px_0_0_rgba(0,0,0,1)]'}
         `}>
            <div className={`
              w-16 h-24 shrink-0 overflow-hidden relative
              ${isY2k ? 'rounded-lg border-2 border-pink-200' :
                isMinimal ? 'rounded-md shadow-md' :
+               isGothic ? 'border-2 border-red-900 shadow-[0_0_10px_rgba(255,0,0,0.2)]' :
+               isMedieval ? 'border-2 border-[#8b7355] shadow-sm' :
+               isScrapbook ? 'border border-gray-300 shadow-[2px_2px_4px_rgba(0,0,0,0.1)] -rotate-3 bg-[#fdfcf8] p-1' :
                'bg-gray-100 border border-black/10'}
            `}>
               {loading ? (
                 <div className="w-full h-full flex items-center justify-center animate-pulse">
-                   <Film size={20} className={isY2k ? "text-fuchsia-300" : "text-black/20"} />
+                   <Film size={20} className={isY2k ? "text-fuchsia-300" : isGothic ? "text-red-900" : "text-black/20"} />
                 </div>
               ) : posterUrl ? (
-                <img src={posterUrl} className="w-full h-full object-cover" />
+                <img src={posterUrl} className={`w-full h-full object-cover ${isScrapbook ? 'border border-gray-200' : ''}`} />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                   <Film size={20} className={isY2k ? "text-fuchsia-300" : "text-black/10"} />
+                   <Film size={20} className={isY2k ? "text-fuchsia-300" : isGothic ? "text-red-900" : "text-black/10"} />
                 </div>
               )}
            </div>
            <div className="flex flex-col justify-center min-w-0">
-              <h3 className={`font-bold leading-tight truncate mb-1 ${isBrutalist ? 'text-xl text-black' : isY2k ? 'text-lg text-fuchsia-700' : isMinimal ? 'text-lg text-gray-800' : 'text-lg text-black'}`}>{title}</h3>
-              <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${isY2k ? 'text-pink-500' : 'text-gray-500'}`}>
+              <h3 className={`font-bold leading-tight truncate mb-1 ${isBrutalist ? 'text-xl text-black' : isY2k ? 'text-lg text-fuchsia-700' : isMinimal ? 'text-lg text-gray-800' : isGothic ? 'text-lg text-red-200 font-serif' : isMedieval ? 'text-lg text-[#2a1a0c] font-serif' : isScrapbook ? 'text-lg text-gray-800 font-sans' : 'text-lg text-black'}`}>{title}</h3>
+              <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${isY2k ? 'text-pink-500' : isGothic ? 'text-red-400/80' : isMedieval ? 'text-[#8b7355]' : isScrapbook ? 'text-gray-500' : 'text-gray-500'}`}>
                   <span>{year}</span>
                   <span>•</span>
-                  <span className={`flex items-center gap-1 ${isY2k ? 'text-fuchsia-500' : isMinimal ? 'text-gray-900' : 'text-red-600'}`}>
+                  <span className={`flex items-center gap-1 ${isY2k ? 'text-fuchsia-500' : isMinimal ? 'text-gray-900' : isGothic ? 'text-red-600' : isMedieval ? 'text-[#a04000]' : 'text-red-600'}`}>
                      <Play size={10} fill="currentColor" /> {rating?.endsWith('/10') ? rating : `${rating}/10`}
                   </span>
               </div>
-              <div className={`mt-2 text-[10px] font-mono italic truncate ${isY2k ? 'text-purple-400' : 'text-gray-400'}`}>#{genre ? genre.toLowerCase().replace(/\s+/g, '-') : 'movie-archive'}</div>
+              <div className={`mt-2 text-[10px] font-mono italic truncate ${isY2k ? 'text-purple-400' : isGothic ? 'text-gray-500' : isScrapbook ? 'text-gray-400' : 'text-gray-400'}`}>#{genre ? genre.toLowerCase().replace(/\s+/g, '-') : 'movie-archive'}</div>
            </div>
         </div>
       </motion.article>

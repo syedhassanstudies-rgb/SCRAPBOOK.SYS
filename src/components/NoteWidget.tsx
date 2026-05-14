@@ -26,8 +26,11 @@ export function NoteWidget({ title, items, rotation = -3, design, bgColor, fontF
   const isBrutalist = activeTheme === 'brutalist';
   const isMinimal = activeTheme === 'minimal';
   const isY2k = activeTheme === 'y2k';
+  const isGothic = activeTheme === 'gothic';
+  const isMedieval = activeTheme === 'medieval';
+  const isScrapbook = activeTheme === 'scrapbook';
   const isStandard = activeTheme === 'standard';
-  const isRetro = activeTheme === 'retro' || (!isTapeTop && !isNotebook && !isChecklist && !isInk && !isPostIt && !isBrutalist && !isMinimal && !isY2k && !isStandard);
+  const isRetro = activeTheme === 'retro' || (!isTapeTop && !isNotebook && !isChecklist && !isInk && !isPostIt && !isBrutalist && !isMinimal && !isY2k && !isGothic && !isMedieval && !isScrapbook && !isStandard);
   
   const textColor = getContrastText(bgColor);
   const borderColor = getContrastBorder(bgColor);
@@ -70,6 +73,9 @@ export function NoteWidget({ title, items, rotation = -3, design, bgColor, fontF
     minimal: `p-6 rounded-2xl border ${borderClass} border-opacity-20 shadow-xl relative w-full max-w-sm mb-4 group ${textColor} ${fontClass}`,
     brutalist: `p-6 border-[4px] border-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] relative w-full max-w-sm mb-4 group uppercase font-bold text-black ${fontClass} bg-white`,
     y2k: `p-6 rounded-[1rem] border-2 border-pink-300 shadow-[0_0_15px_rgba(255,105,180,0.3)] bg-gradient-to-br from-white/60 to-white/20 backdrop-blur-md relative w-full max-w-sm mb-4 group ${textColor} ${fontClass}`,
+    gothic: `p-6 border-y-2 border-double ${borderColor} bg-black/90 shadow-[0_0_15px_rgba(0,0,0,0.8)] relative w-full max-w-sm mb-4 group text-red-100 ${fontClass}`,
+    medieval: `p-6 bg-[#d4c3a9]/90 border-[4px] border-[#8b7355] shadow-[4px_4px_12px_rgba(0,0,0,0.5)] rounded-tl-xl rounded-br-xl relative w-full max-w-sm mb-4 group text-[#4a3b2c] ${fontClass}`,
+    scrapbook: `p-6 bg-white border border-gray-200 shadow-[2px_2px_8px_rgba(0,0,0,0.08)] -rotate-1 relative w-full max-w-sm mb-4 group text-gray-800 ${fontClass}`,
     standard: `p-6 border-2 border-black rounded shadow-[4px_4px_0_0_rgba(0,0,0,1)] relative w-full max-w-sm mb-4 group text-black font-sans bg-white`
   };
 
@@ -84,7 +90,7 @@ export function NoteWidget({ title, items, rotation = -3, design, bgColor, fontF
       animate={{ opacity: 1, x: 0, rotate: rotation }}
       whileHover={{ scale: 1.02, rotate: 0, zIndex: 50, transition: { duration: 0.3 } }}
       className={getStyleClass()}
-      style={{ backgroundColor: (isY2k || isBrutalist || isStandard || isMinimal) ? undefined : (bgColor || (isNotebook ? '#fff' : '#fdfcf8')) }}
+      style={{ backgroundColor: (isY2k || isBrutalist || isStandard || isMinimal || isGothic || isMedieval || isScrapbook) ? undefined : (bgColor || (isNotebook ? '#fff' : '#fdfcf8')) }}
     >
       {isRetro && (
         isTapeTop ? (

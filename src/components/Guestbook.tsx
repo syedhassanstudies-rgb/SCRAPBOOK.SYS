@@ -37,8 +37,11 @@ export function Guestbook({ targetUserId, rotation = 1, design, bgColor, fontFam
   const isBrutalist = activeTheme === 'brutalist';
   const isY2k = activeTheme === 'y2k';
   const isMinimal = activeTheme === 'minimal';
+  const isGothic = activeTheme === 'gothic';
+  const isMedieval = activeTheme === 'medieval';
+  const isScrapbook = activeTheme === 'scrapbook';
   const isStandard = activeTheme === 'standard';
-  const isRetro = activeTheme === 'retro' || (!isTerminal && !isChat && !isBrutalist && !isY2k && !isMinimal && !isStandard);
+  const isRetro = activeTheme === 'retro' || (!isTerminal && !isChat && !isBrutalist && !isY2k && !isMinimal && !isGothic && !isMedieval && !isScrapbook && !isStandard);
 
   useEffect(() => {
     const q = query(
@@ -227,6 +230,9 @@ export function Guestbook({ targetUserId, rotation = 1, design, bgColor, fontFam
     minimal: `p-6 rounded-3xl border ${borderClass} border-opacity-20 shadow-2xl relative min-h-[300px] flex flex-col w-full max-w-md text-gray-900 ${fontClass} bg-white`,
     brutalist: `p-6 border-[4px] border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative min-h-[300px] flex flex-col w-full max-w-md uppercase font-bold text-black ${fontClass} bg-white`,
     y2k: `p-6 rounded-[2rem] border-2 border-pink-300 shadow-[0_0_20px_rgba(255,105,180,0.3)] bg-gradient-to-br from-white/40 to-white/10 backdrop-blur-lg relative min-h-[300px] flex flex-col w-full max-w-md ${textColor} ${fontClass}`,
+    gothic: `p-6 border border-red-900/50 bg-black/90 shadow-[0_0_20px_rgba(0,0,0,0.9)] relative min-h-[300px] flex flex-col w-full max-w-md text-red-100 ${fontClass}`,
+    medieval: `p-6 border-[6px] border-[#8b7355] bg-[#d4c3a9]/95 shadow-[6px_6px_15px_rgba(0,0,0,0.5)] rounded-tr-3xl rounded-bl-3xl relative min-h-[300px] flex flex-col w-full max-w-md text-[#4a3b2c] ${fontClass}`,
+    scrapbook: `p-6 bg-white border border-gray-200 shadow-[3px_3px_12px_rgba(0,0,0,0.1)] -rotate-1 relative min-h-[300px] flex flex-col w-full max-w-md text-gray-800 ${fontClass}`,
     standard: `p-6 border-2 border-black rounded-[8px] shadow-[4px_4px_0_0_rgba(0,0,0,1)] relative min-h-[300px] flex flex-col w-full max-w-md text-black font-sans bg-white`
   };
 
@@ -237,7 +243,7 @@ export function Guestbook({ targetUserId, rotation = 1, design, bgColor, fontFam
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, rotate: rotation }}
       className={currentThemeClass}
-      style={{ backgroundColor: (isY2k || isBrutalist || isMinimal || isStandard) ? undefined : (bgColor || '#fcf9f2') }}
+      style={{ backgroundColor: (isY2k || isBrutalist || isMinimal || isStandard || isGothic || isMedieval || isScrapbook) ? undefined : (bgColor || '#fcf9f2') }}
     >
       {isRetro && <Tape color="tertiary" rotation={12} className="-top-2 left-1/4 w-12 h-5 opacity-40" />}
       

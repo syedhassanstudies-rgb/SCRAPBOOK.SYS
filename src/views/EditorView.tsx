@@ -4,7 +4,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuth } from '../lib/AuthContext';
 import { ScrapbookPieceData } from '../types';
-import { sanitizeData } from '../lib/utils';
+import { sanitizeData, cn, getContrastText } from '../lib/utils';
 import { Plus, Trash2, Save, Move, Upload, Search } from 'lucide-react';
 import { MusicWidget } from '../components/MusicWidget';
 import { NoteWidget } from '../components/NoteWidget';
@@ -53,8 +53,13 @@ export function EditorView() {
   }, [user]);
 
   const handleSaveHeader = async () => {
-    await updateProfile(headerState);
-    setEditingHeader(false);
+    try {
+      await updateProfile(headerState);
+      setEditingHeader(false);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to save profile. Please try again.');
+    }
   };
 
   const addPiece = async (type: ScrapbookPieceData['type']) => {
@@ -222,25 +227,36 @@ export function EditorView() {
     }
   };
 
+  const patternColor = getContrastText(headerState.backgroundColor) === 'text-paper-ink' ? '%23000000' : '%23ffffff';
+  const patternOpacity = '0.08';
+  const getPatternUrl = (pattern?: string) => {
+    switch(pattern) {
+      case 'dots': return `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='${patternColor}' fill-opacity='${patternOpacity}' fill-rule='evenodd'%3E%3Ccircle cx='2' cy='2' r='2'/%3E%3C/g%3E%3C/svg%3E")`;
+      case 'grid': return `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20z' fill='${patternColor}' fill-opacity='${patternOpacity}' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      case 'lines': return `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v1H0z' fill='${patternColor}' fill-opacity='${patternOpacity}' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      case 'diagonal': return `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20L20 0H18L0 18V20ZM20 20V18L18 20H20ZM0 0V2L2 0H0Z' fill='${patternColor}' fill-opacity='${patternOpacity}' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      case 'cross': return `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9 9h2v2H9V9z' fill='${patternColor}' fill-opacity='0.15' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      case 'checkerboard': return `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h10v10H0V0zm10 10h10v10H10V10z' fill='${patternColor}' fill-opacity='0.04' fill-rule='evenodd'/%3E%3C/svg%3E")`;
+      default: return 'none';
+    }
+  };
+
   return (
     <>
       <div 
         className="fixed inset-0 min-h-screen z-[-1] transition-colors duration-1000"
         style={{ 
           backgroundColor: headerState.backgroundColor || 'transparent',
-          backgroundImage: headerState.backgroundPattern === 'dots' ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'2\'/%3E%3C/g%3E%3C/svg%3E")' :
-                           headerState.backgroundPattern === 'grid' ? 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20z\' fill=\'%23000000\' fill-opacity=\'0.02\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' :
-                           headerState.backgroundPattern === 'lines' ? 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h40v1H0z\' fill=\'%23000000\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' :
-                           'none'
+          backgroundImage: getPatternUrl(headerState.backgroundPattern)
         }}
       />
-      <div className="max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop py-xl relative z-10 min-h-screen">
+      <div className={cn("max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop py-12 relative z-10 min-h-screen transition-colors duration-1000", getContrastText(headerState.backgroundColor))}>
         <div className="flex justify-between items-center mb-xl">
-        <h1 className="font-serif text-4xl italic">Page Editor</h1>
+        <h1 className="font-serif text-4xl italic transition-colors duration-1000">Page Editor</h1>
         <div className="flex gap-4">
            <button 
              onClick={() => setIsAdding(true)}
-             className="bg-paper-tertiary text-white px-4 py-2 flex items-center gap-2 hover:bg-paper-tertiary/90 hover:-translate-y-0.5 hover:shadow-md transition-all uppercase text-[12px] font-bold"
+             className="bg-paper-ink text-white rounded-full px-5 py-2 flex items-center gap-2 hover:bg-black hover:-translate-y-0.5 shadow-sm transition-all uppercase text-xs font-bold"
            >
              <Plus size={16} /> Add Piece
            </button>
@@ -248,22 +264,22 @@ export function EditorView() {
       </div>
 
       {/* Header Editor */}
-      <section className="bg-[#fffffb] p-lg border border-paper-outline mb-xl relative analog-shadow paper-edge">
-        <div className="flex justify-between items-center mb-4 border-b-2 border-paper-outline/20 pb-4 mt-2">
+      <section className="bg-white text-paper-ink rounded-2xl p-8 border border-paper-outline/20 mb-xl relative shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <div className="flex justify-between items-center mb-4 border-b border-paper-outline/20 pb-4 mt-2">
           <h2 className="font-serif text-3xl italic tracking-tight">Profile & Page Settings</h2>
           {!editingHeader ? (
-            <button onClick={() => setEditingHeader(true)} className="text-paper-ink border border-paper-outline px-3 py-1 hover:bg-paper-secondary hover:text-white hover:-translate-y-0.5 hover:shadow-sm transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+            <button onClick={() => setEditingHeader(true)} className="text-paper-ink border border-paper-outline/30 px-3 py-1.5 rounded-full hover:bg-black hover:text-white hover:-translate-y-0.5 shadow-sm transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
               <Plus size={12} /> Edit Settings
             </button>
           ) : (
             <div className="flex gap-2">
               <button 
                 onClick={() => setHeaderState(s => ({...s, backgroundColor: '#f4f1ee', headerBackgroundColor: '#fffff8', backgroundPattern: 'none'}))} 
-                className="text-paper-ink border border-paper-outline px-3 py-1 hover:bg-paper-outline/10 hover:-translate-y-0.5 transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+                className="text-paper-ink border border-paper-outline/30 px-3 py-1.5 rounded-full hover:bg-black/5 hover:-translate-y-0.5 transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
               >
                 Reset Colors
               </button>
-              <button onClick={handleSaveHeader} className="text-white bg-paper-tertiary px-3 py-1 hover:bg-paper-ink hover:-translate-y-0.5 hover:shadow-sm transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider shadow-sm">
+              <button onClick={handleSaveHeader} className="text-white bg-paper-ink px-4 py-1.5 rounded-full hover:bg-black hover:-translate-y-0.5 hover:shadow-md transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider shadow-sm">
                 <Save size={12} /> Save Changes
               </button>
             </div>
@@ -271,7 +287,7 @@ export function EditorView() {
         </div>
 
         {editingHeader ? (
-          <div className="space-y-6 bg-paper-outline/5 p-4 border border-dashed border-paper-outline/30 mt-2">
+          <div className="space-y-6 bg-black/[0.02] p-6 rounded-xl border border-black/5 mt-4">
             <div>
               <h3 className="font-serif text-xl border-b border-paper-outline/20 pb-2 mb-4">Profile Info</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -345,6 +361,9 @@ export function EditorView() {
                       <option value="dots">Dots</option>
                       <option value="grid">Grid</option>
                       <option value="lines">Lines</option>
+                      <option value="diagonal">Diagonal Lines</option>
+                      <option value="cross">Crosses</option>
+                      <option value="checkerboard">Checkerboard</option>
                     </select>
                   </div>
 
@@ -361,6 +380,9 @@ export function EditorView() {
                       <option value="minimal">Minimal Modern</option>
                       <option value="brutalist">Brutalist</option>
                       <option value="y2k">Y2K Cyber</option>
+                      <option value="gothic">Gothic / Vampire</option>
+                      <option value="medieval">Medieval / Fantasy</option>
+                      <option value="scrapbook">Paper Scrapbook</option>
                       <option value="standard">Standard Default</option>
                     </select>
                   </div>
@@ -368,9 +390,9 @@ export function EditorView() {
             </div>
           </div>
         ) : (
-          <div className="flex gap-6 items-center bg-paper-outline/5 p-4 border border-dashed border-paper-outline/30 mt-2">
-            <div className="p-1 border bg-white border-paper-outline shadow-sm rotate-2">
-               <img src={profile?.avatarUrl} className="w-20 h-20 grayscale contrast-125 sepia-[.2] object-cover" alt="" />
+          <div className="flex gap-6 items-center bg-black/[0.02] rounded-xl p-6 border border-black/5 mt-4">
+            <div className="p-1 border bg-white border-paper-outline/30 rounded-lg shadow-sm rotate-2">
+               <img src={profile?.avatarUrl} className="w-20 h-20 rounded-md grayscale contrast-125 sepia-[.2] object-cover" alt="" />
             </div>
             <div className="flex flex-col gap-1">
               <p className="font-serif text-2xl italic tracking-tight leading-none">@{profile?.username}</p>
@@ -382,14 +404,14 @@ export function EditorView() {
 
       {/* Pieces List */}
       {!piecesLoading && pieces.length === 0 && (
-        <div className="bg-paper-outline/5 p-lg border border-dashed border-paper-outline text-center mb-xl">
-          <h2 className="font-serif text-3xl italic mb-4">Start with a Template</h2>
-          <p className="text-paper-outline mb-8 max-w-sm mx-auto font-mono text-sm">Choose a pre-designed layout to jumpstart your scrapbook, or start from scratch.</p>
+        <div className={cn("p-12 rounded-2xl border text-center mb-xl transition-colors duration-1000", getContrastText(headerState.backgroundColor) === 'text-paper-ink' ? 'bg-black/[0.02] border-black/5' : 'bg-white/[0.05] border-white/10')}>
+          <h2 className={cn("font-serif text-3xl italic mb-4 transition-colors duration-1000", getContrastText(headerState.backgroundColor))}>Start with a Template</h2>
+          <p className={cn("mb-8 max-w-sm mx-auto font-mono text-sm transition-colors duration-1000", getContrastText(headerState.backgroundColor) === 'text-paper-ink' ? 'text-paper-outline' : 'text-white/60')}>Choose a pre-designed layout to jumpstart your scrapbook, or start from scratch.</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <button 
               disabled={applyingTemplate}
               onClick={() => applyTemplate('retro-film')} 
-              className="p-6 border border-paper-outline bg-[#fffffb] text-paper-ink hover:-translate-y-1 hover:shadow-lg transition-all text-center analog-shadow group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-6 rounded-xl border border-paper-outline/20 bg-white text-paper-ink hover:-translate-y-1 transition-all text-center group disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
             >
               <div className="w-16 h-16 mx-auto mb-4 bg-[#f4f1ee] border-2 border-paper-outline rotate-2 group-hover:rotate-6 transition-transform flex items-center justify-center">📷</div>
               <h3 className="font-serif text-xl italic mb-2 tracking-tight">{applyingTemplate ? 'Working...' : 'Retro Film'}</h3>
@@ -418,8 +440,8 @@ export function EditorView() {
       )}
 
       {piecesLoading && (
-        <div className="h-64 flex flex-col items-center justify-center gap-4 opacity-50">
-          <div className="w-8 h-8 border-2 border-dashed border-paper-ink rounded-full animate-spin" />
+        <div className={cn("h-64 flex flex-col items-center justify-center gap-4 opacity-50 transition-colors duration-1000", getContrastText(headerState.backgroundColor))}>
+          <div className={cn("w-8 h-8 border-2 border-dashed rounded-full animate-spin transition-colors duration-1000", getContrastText(headerState.backgroundColor) === 'text-paper-ink' ? 'border-paper-ink' : 'border-paper-base')} />
           <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Loading Archive...</span>
         </div>
       )}
@@ -432,12 +454,12 @@ export function EditorView() {
             onDragStart={(e) => handleDragStart(e, piece.id)}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, piece.id)}
-            className="group relative bg-[#fffffb] border border-paper-outline p-4 flex flex-col gap-4 analog-shadow transition-all hover:-translate-y-1 cursor-move"
+            className="group relative bg-white text-paper-ink border border-paper-outline/30 rounded-2xl p-5 flex flex-col gap-4 shadow-[4px_4px_0_0_rgba(0,0,0,0.05)] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.08)] cursor-move"
           >
             <div className="absolute top-2 right-2 z-50 flex gap-2">
                <button 
                  onClick={() => removePiece(piece.id)}
-                 className="p-1.5 bg-paper-base border border-paper-outline text-paper-ink hover:bg-paper-secondary hover:text-white hover:border-paper-secondary transition-colors"
+                 className="p-1.5 bg-paper-base border border-paper-outline/30 rounded-md text-paper-ink hover:bg-paper-secondary hover:text-white transition-colors"
                  title="Delete Piece"
                >
                  <Trash2 size={16} />
@@ -538,6 +560,34 @@ export function EditorView() {
                 <>
                   <ImageUploadInput label="Image URL / Upload" value={piece.data.src} onChange={v => updatePieceData(piece.id, {src: v})} />
                   <EditorInput label="Caption" value={piece.data.caption} onChange={v => updatePieceData(piece.id, {caption: v})} />
+                  <EditorInput label="Date" type="date" value={piece.data.date} onChange={v => updatePieceData(piece.id, {date: v})} />
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase">Image Filter</label>
+                    <select 
+                      value={piece.data.filter || 'default'}
+                      onChange={e => updatePieceData(piece.id, {filter: e.target.value})}
+                      className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                    >
+                      <option value="default">Theme Default</option>
+                      <option value="none">No Filter</option>
+                      <option value="sepia">Sepia</option>
+                      <option value="bw">Black & White</option>
+                      <option value="vintage">Vintage Warm</option>
+                      <option value="cool">Cool Tone</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase">Design Variant</label>
+                    <select 
+                      value={piece.data.design || 'standard'}
+                      onChange={e => updatePieceData(piece.id, {design: e.target.value})}
+                      className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                    >
+                      <option value="standard">Standard Polaroid</option>
+                      <option value="film-frame">Film Negative</option>
+                      <option value="photobooth">Photobooth Strip</option>
+                    </select>
+                  </div>
                 </>
               )}
               {piece.type === 'decoration' && (
@@ -575,6 +625,26 @@ export function EditorView() {
                    </div>
                 </>
               )}
+              {piece.type === 'guestbook' && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase">Design Style</label>
+                    <select 
+                      value={piece.data.design || 'standard'}
+                      onChange={e => updatePieceData(piece.id, {design: e.target.value})}
+                      className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                    >
+                      <option value="standard">Standard Default</option>
+                      <option value="retro">Retro Scrapbook</option>
+                      <option value="minimal">Minimal Modern</option>
+                      <option value="brutalist">Brutalist Form</option>
+                      <option value="y2k">Y2K Sparkle</option>
+                      <option value="terminal">Green Terminal</option>
+                      <option value="chat">iMessage Chat</option>
+                    </select>
+                  </div>
+                </>
+              )}
               
               <div className="grid grid-cols-2 gap-4 mt-2">
                 <div className="flex flex-col gap-1">
@@ -608,53 +678,9 @@ export function EditorView() {
                      <input type="color" value={piece.style.bgColor || '#fffffb'} onChange={e => updatePieceStyle(piece.id, {bgColor: e.target.value})} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
                    </div>
                 </div>
-                <div className="flex flex-col gap-1 col-span-full">
-                   <label className="text-[10px] font-bold uppercase">Column placement</label>
-                   <div className="flex gap-2">
-                      <button 
-                        onClick={() => updatePieceStyle(piece.id, {column: 'left'})}
-                        className={`flex-grow py-1 text-[10px] border ${piece.style.column === 'left' ? 'bg-paper-secondary text-white border-paper-secondary' : 'bg-white text-paper-ink border-paper-outline'}`}
-                      >
-                        Left
-                      </button>
-                      <button 
-                        onClick={() => updatePieceStyle(piece.id, {column: 'right'})}
-                        className={`flex-grow py-1 text-[10px] border ${piece.style.column === 'right' ? 'bg-paper-secondary text-white border-paper-secondary' : 'bg-white text-paper-ink border-paper-outline'}`}
-                      >
-                        Right
-                      </button>
-                      <button 
-                        onClick={() => updatePieceStyle(piece.id, {column: 'full'})}
-                        className={`flex-grow py-1 text-[10px] border ${piece.style.column === 'full' ? 'bg-paper-secondary text-white border-paper-secondary' : 'bg-white text-paper-ink border-paper-outline'}`}
-                      >
-                        Full
-                      </button>
-                   </div>
-                </div>
+                
 
-                <div className="flex flex-col gap-1 col-span-full">
-                   <label className="text-[10px] font-bold uppercase">Alignment</label>
-                   <div className="flex gap-2">
-                      <button 
-                        onClick={() => updatePieceStyle(piece.id, {align: 'left'})}
-                        className={`flex-grow py-1 text-[10px] border ${(piece.style.align || 'center') === 'left' ? 'bg-paper-primary text-white border-paper-primary' : 'bg-white text-paper-ink border-paper-outline'}`}
-                      >
-                        Left
-                      </button>
-                      <button 
-                        onClick={() => updatePieceStyle(piece.id, {align: 'center'})}
-                        className={`flex-grow py-1 text-[10px] border ${(piece.style.align || 'center') === 'center' ? 'bg-paper-primary text-white border-paper-primary' : 'bg-white text-paper-ink border-paper-outline'}`}
-                      >
-                        Center
-                      </button>
-                      <button 
-                        onClick={() => updatePieceStyle(piece.id, {align: 'right'})}
-                        className={`flex-grow py-1 text-[10px] border ${(piece.style.align || 'center') === 'right' ? 'bg-paper-primary text-white border-paper-primary' : 'bg-white text-paper-ink border-paper-outline'}`}
-                      >
-                        Right
-                      </button>
-                   </div>
-                </div>
+                
 
                 <div className="flex flex-col gap-1">
                    <label className="text-[10px] font-bold uppercase">Size</label>
@@ -707,6 +733,9 @@ export function EditorView() {
                      <option value="minimal">Minimal Modern</option>
                      <option value="brutalist">Brutalist</option>
                      <option value="y2k">Y2K Cyber</option>
+                     <option value="gothic">Gothic / Vampire</option>
+                     <option value="medieval">Medieval / Fantasy</option>
+                     <option value="scrapbook">Paper Scrapbook</option>
                      <option value="standard">Standard Default</option>
                    </select>
                 </div>
@@ -735,12 +764,12 @@ export function EditorView() {
         <div className="fixed inset-0 bg-paper-ink/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={(e) => {
           if (e.target === e.currentTarget) setIsAdding(false);
         }}>
-          <div className="bg-paper-base border-2 border-paper-outline p-xl max-w-2xl w-full shadow-xl rotate-1 max-h-[80vh] overflow-y-auto">
-             <div className="flex justify-between items-center mb-lg border-b border-paper-outline pb-2">
-               <h2 className="font-serif text-3xl italic">Add New Piece</h2>
+          <div className="bg-white border text-paper-ink border-paper-outline/30 rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] max-w-4xl w-full max-h-[90vh] overflow-y-auto relative p-6 mt-4">
+             <div className="flex justify-between items-center mb-6 border-b border-paper-outline/20 pb-4">
+               <h2 className="font-serif text-3xl italic tracking-tight">Add New Piece</h2>
                <button onClick={() => setIsAdding(false)} className="text-paper-outline hover:text-paper-ink transition-colors">✕</button>
              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                {[
                  { type: 'music', icon: '🎧', title: 'Music Track', desc: 'A single song or album you are listening to' },
                  { type: 'top-songs', icon: '🎵', title: 'Top Songs', desc: 'List your favorite tracks of the moment' },
@@ -757,9 +786,9 @@ export function EditorView() {
                      addPiece(item.type as any);
                      setIsAdding(false);
                    }}
-                   className="p-4 border border-paper-outline hover:bg-paper-secondary hover:text-white transition-all text-left flex items-start gap-4 group"
+                   className="p-6 border border-paper-outline/20 rounded-xl hover:bg-paper-ink hover:text-white transition-all text-center flex flex-col items-center gap-4 group cursor-pointer"
                  >
-                   <div className="text-2xl group-hover:scale-110 transition-transform">{item.icon}</div>
+                   <div className="text-4xl group-hover:scale-110 transition-transform">{item.icon}</div>
                    <div>
                      <h3 className="font-bold uppercase text-[12px] tracking-widest mb-1 group-hover:text-white">{item.title}</h3>
                      <p className="text-xs text-paper-outline group-hover:text-white/80">{item.desc}</p>
@@ -783,13 +812,13 @@ function EditorInput({ label, value, onChange, isTextArea, type = "text" }: { la
         <textarea 
           value={value} 
           onChange={e => onChange(e.target.value)}
-          className="bg-paper-base border border-paper-outline p-2 text-sm focus:outline-none min-h-[80px]"
+          className="bg-white border-2 border-paper-outline/30 rounded-md p-2.5 text-sm focus:outline-none focus:border-paper-ink focus:shadow-[2px_2px_0_0_rgba(27,28,28,1)] transition-all min-h-[80px]"
         />
       ) : (
         <div className="flex gap-2 items-center">
           {type === 'color' && (
             <div 
-              className="w-8 h-8 rounded-full border border-paper-outline shadow-sm flex-shrink-0 cursor-pointer overflow-hidden relative"
+              className="w-10 h-10 rounded-lg border-2 border-paper-outline/30 shadow-sm flex-shrink-0 cursor-pointer overflow-hidden relative"
               style={{ backgroundColor: value }}
             >
               <input type="color" value={value} onChange={e => onChange(e.target.value)} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
@@ -799,7 +828,7 @@ function EditorInput({ label, value, onChange, isTextArea, type = "text" }: { la
             type={type === 'color' ? 'text' : type} 
             value={value} 
             onChange={e => onChange(e.target.value)}
-            className="bg-paper-base border border-paper-outline p-2 text-sm focus:outline-none flex-grow"
+            className="bg-white border-2 border-paper-outline/30 rounded-md p-2.5 text-sm focus:outline-none focus:border-paper-ink focus:shadow-[2px_2px_0_0_rgba(27,28,28,1)] transition-all flex-grow"
           />
         </div>
       )}
@@ -840,20 +869,20 @@ function MovieSearchInput({ onResult }: { onResult: (data: { title: string; year
           value={query} 
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          className="bg-paper-base border border-paper-outline p-2 text-sm focus:outline-none flex-grow"
+          className="bg-white border-2 border-paper-outline/30 rounded-md p-2 text-sm focus:outline-none focus:border-paper-ink focus:shadow-[2px_2px_0_0_rgba(27,28,28,1)] transition-all flex-grow"
           placeholder="e.g. Inception 2010"
         />
         <button 
           onClick={handleSearch}
           disabled={isSearching}
-          className="bg-paper-ink text-white px-3 py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 hover:bg-paper-ink/80 transition-colors disabled:opacity-50"
+          className="bg-paper-ink text-white rounded-md px-3 py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 hover:bg-black transition-colors disabled:opacity-50"
         >
           <Search size={14} />
           {isSearching ? '...' : 'Search'}
         </button>
       </div>
       {results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-black shadow-[4px_4px_0_0_#000] z-50 max-h-60 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-paper-outline/30 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
           {results.map((res, i) => (
             <div 
               key={i} 
@@ -910,20 +939,20 @@ function MusicSearchInput({ onResult }: { onResult: (data: { song: string; artis
           value={query} 
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          className="bg-paper-base border border-paper-outline p-2 text-sm focus:outline-none flex-grow"
+          className="bg-white border-2 border-paper-outline/30 rounded-md p-2 text-sm focus:outline-none focus:border-paper-ink focus:shadow-[2px_2px_0_0_rgba(27,28,28,1)] transition-all flex-grow"
           placeholder="e.g. Pink Pony Club"
         />
         <button 
           onClick={handleSearch}
           disabled={isSearching}
-          className="bg-paper-ink text-white px-3 py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 hover:bg-paper-ink/80 transition-colors disabled:opacity-50"
+          className="bg-paper-ink text-white rounded-md px-3 py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 hover:bg-black transition-colors disabled:opacity-50"
         >
           <Search size={14} />
           {isSearching ? '...' : 'Search'}
         </button>
       </div>
       {results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-black shadow-[4px_4px_0_0_#000] z-50 max-h-60 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-paper-outline/30 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
           {results.map((res, i) => (
             <div 
               key={i} 
@@ -990,7 +1019,7 @@ function ImageUploadInput({ label, value, onChange }: { label: string; value: st
           type="text" 
           value={value} 
           onChange={e => onChange(e.target.value)}
-          className="bg-paper-base border border-paper-outline p-2 text-sm focus:outline-none flex-grow"
+          className="bg-white border-2 border-paper-outline/30 rounded-md p-2 text-sm focus:outline-none focus:border-paper-ink focus:shadow-[2px_2px_0_0_rgba(27,28,28,1)] transition-all flex-grow"
           placeholder="Enter image URL..."
         />
         <div className="relative">
@@ -1003,7 +1032,7 @@ function ImageUploadInput({ label, value, onChange }: { label: string; value: st
           />
           <button 
             type="button" 
-            className="w-full bg-paper-tertiary/10 text-paper-ink border border-paper-outline border-dashed p-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-paper-tertiary/20 transition-colors"
+            className="w-full bg-paper-base text-paper-ink border-2 border-paper-outline/50 border-dashed rounded-md p-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-paper-outline/10 transition-colors"
             disabled={isUploading}
           >
             <Upload size={14} />

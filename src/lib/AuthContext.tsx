@@ -64,7 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (data: Partial<Profile>) => {
     if (!user) return;
     const profileRef = doc(db, 'users', user.uid);
-    await setDoc(profileRef, sanitizeData({ ...profile, ...data }), { merge: true });
+    try {
+      await setDoc(profileRef, sanitizeData({ ...profile, ...data }), { merge: true });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+    }
   };
 
   return (

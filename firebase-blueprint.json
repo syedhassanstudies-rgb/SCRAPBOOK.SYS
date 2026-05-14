@@ -12,6 +12,14 @@
         "avatarUrl": { "type": "string" },
         "email": { "type": "string" },
         "isPublic": { "type": "boolean" },
+        "backgroundColor": { "type": "string" },
+        "backgroundPattern": { "type": "string", "enum": ["none", "dots", "grid", "lines", "diagonal", "cross", "checkerboard"] },
+        "headerBackgroundColor": { "type": "string" },
+        "theme": { "type": "string", "enum": ["retro", "minimal", "brutalist", "y2k", "standard", "gothic", "medieval", "scrapbook"] },
+        "fontFamily": { "type": "string" },
+        "fontSize": { "type": "string" },
+        "titleFontFamily": { "type": "string" },
+        "titleFontSize": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "username"]

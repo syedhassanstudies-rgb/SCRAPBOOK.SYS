@@ -20,7 +20,7 @@ interface TopListWidgetProps {
   bgColor?: string;
   fontFamily?: string;
   borderStyle?: string;
-  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'vhs' | 'dvd' | 'filmstrip' | 'cassette' | 'cd' | 'vinyl' | 'standard';
+  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'vhs' | 'dvd' | 'filmstrip' | 'cassette' | 'cd' | 'vinyl' | 'standard' | 'gothic' | 'medieval' | 'scrapbook' | string;
 }
 
 function TopListItem({ item, i, type, id, userId, posters = [], textColor, borderColor, theme = 'standard' }: any) {
@@ -421,6 +421,9 @@ export function TopListWidget({ id, userId, title, items, posters = [], type, ro
     minimal: `p-5 rounded-3xl border ${borderClass} border-[#999] shadow-xl relative mb-4 w-full max-w-[340px] group ${textColor} ${fontClass} bg-white`,
     brutalist: `p-5 border-[4px] border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative mb-4 w-full max-w-[340px] group uppercase font-bold text-black ${fontClass} bg-white`,
     y2k: `p-5 rounded-[2rem] border-2 border-pink-300 shadow-[0_0_20px_rgba(255,105,180,0.3)] bg-gradient-to-br from-fuchsia-50 to-pink-100 relative mb-4 w-full max-w-[340px] group text-pink-900 ${fontClass}`,
+    gothic: `p-5 border-[3px] border-double ${borderColor} bg-black/90 shadow-[0_0_20px_rgba(0,0,0,0.8)] relative mb-4 w-full max-w-[340px] group text-red-100 ${fontClass}`,
+    medieval: `p-5 bg-gradient-to-b from-[#d4c3a9]/90 to-[#bca688]/90 border-[6px] border-[#8b7355] shadow-[6px_6px_15px_rgba(0,0,0,0.6)] rounded-tr-3xl rounded-bl-3xl relative mb-4 w-full max-w-[340px] group text-[#4a3b2c] ${fontClass}`,
+    scrapbook: `p-6 bg-white border border-gray-200 shadow-[3px_3px_12px_rgba(0,0,0,0.1)] -rotate-1 relative mb-4 w-full max-w-[340px] group text-gray-800 ${fontClass}`,
     standard: `p-5 border-2 border-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] relative mb-4 w-full max-w-[340px] group ${textColor} ${fontClass} bg-white font-sans`,
   };
 
@@ -432,7 +435,7 @@ export function TopListWidget({ id, userId, title, items, posters = [], type, ro
       animate={{ opacity: 1, y: 0, rotate: rotation }}
       whileHover={{ scale: 1.02, rotate: 0, zIndex: 50 }}
       className={currentThemeClass}
-      style={{ backgroundColor: ['minimal', 'brutalist', 'y2k', 'standard'].includes(activeTheme) ? undefined : (bgColor || '#faf9f6') }}
+      style={{ backgroundColor: ['minimal', 'brutalist', 'y2k', 'standard', 'gothic', 'medieval', 'scrapbook'].includes(activeTheme) ? undefined : (bgColor || '#faf9f6') }}
     >
       {activeTheme === 'retro' && <Tape color={color} rotation={-5} className="-top-3 left-1/4 w-20 h-6 opacity-90" />}
       
