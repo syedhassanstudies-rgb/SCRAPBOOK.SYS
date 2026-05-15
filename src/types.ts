@@ -28,18 +28,20 @@ export interface ScrapbookPieceData {
 export interface UserProfile {
   uid: string;
   username: string;
+  email?: string;
   bio: string;
   subtitle: string;
   avatarUrl: string;
   isPublic: boolean;
   backgroundColor?: string;
-  backgroundPattern?: 'none' | 'dots' | 'grid' | 'lines';
+  backgroundPattern?: 'none' | 'dots' | 'grid' | 'lines' | 'diagonal' | 'cross' | 'checkerboard';
   headerBackgroundColor?: string;
-  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'standard';
+  theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'standard' | 'gothic' | 'medieval' | 'scrapbook';
   titleFontFamily?: 'sans' | 'serif' | 'mono';
   titleFontSize?: 'sm' | 'md' | 'lg' | 'xl';
   fontFamily?: 'sans' | 'serif' | 'mono';
   fontSize?: 'sm' | 'md' | 'lg';
+  createdAt?: string;
 }
 
 export interface GuestbookEntry {

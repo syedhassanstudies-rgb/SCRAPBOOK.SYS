@@ -3,12 +3,13 @@ import { Sparkles } from 'lucide-react';
 
 interface DecorationProps {
   text?: string;
+  imageUrl?: string;
   rotation?: number;
   color?: 'secondary' | 'tertiary' | 'primary' | 'yellow';
   theme?: 'retro' | 'minimal' | 'brutalist' | 'y2k' | 'gothic' | 'medieval' | 'scrapbook' | string;
 }
 
-export function Decoration({ text, rotation = -12, color = 'tertiary', theme = 'retro' }: DecorationProps) {
+export function Decoration({ text, imageUrl, rotation = -12, color = 'tertiary', theme = 'retro' }: DecorationProps) {
   const colorClasses = {
     secondary: 'bg-paper-secondary/20 border-paper-secondary/30',
     tertiary: 'bg-paper-tertiary/20 border-paper-tertiary/30',
@@ -27,6 +28,24 @@ export function Decoration({ text, rotation = -12, color = 'tertiary', theme = '
   };
 
   const currentThemeClass = themeClasses[theme] || themeClasses['retro'];
+
+  if (imageUrl) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1, rotate: rotation }}
+        className="relative pointer-events-none w-32 h-32 flex items-center justify-center"
+      >
+        <img 
+          src={imageUrl} 
+          alt="sticker" 
+          className="w-full h-full object-contain filter drop-shadow-md" 
+          draggable={false}
+          referrerPolicy="no-referrer"
+        />
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

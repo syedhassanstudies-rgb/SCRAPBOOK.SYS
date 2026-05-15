@@ -155,7 +155,7 @@ export function TopListWidget({ id, userId, title, items, posters = [], type, ro
   // VHS Theme (Movies)
   if (activeTheme === 'vhs' && type === 'movies') {
     return (
-      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-full max-w-[340px] mb-6 relative group font-sans">
+      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 mb-6 relative group font-sans">
         <div className="bg-[#111] border-[4px] border-[#333] rounded-[4px] p-5 shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative overflow-hidden flex flex-col min-h-[460px]">
           {/* Top Bar */}
           <div className="flex justify-between items-end border-b-2 border-red-600 pb-2 mb-4 relative z-10">
@@ -192,7 +192,7 @@ export function TopListWidget({ id, userId, title, items, posters = [], type, ro
   // DVD Theme (Movies)
   if (activeTheme === 'dvd' && type === 'movies') {
     return (
-      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-full max-w-[340px] mb-6 relative group font-sans">
+      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 mb-6 relative group font-sans">
         <div className="bg-[#f0f0f0] border-2 border-gray-400 rounded-sm shadow-[6px_6px_0_0_rgba(0,0,0,1)] relative flex flex-col p-1.5 h-[500px]">
            <div className="flex-1 bg-gradient-to-br from-[#0a192f] to-[#0d0d0d] border border-black p-4 relative overflow-hidden flex flex-col shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
               
@@ -235,7 +235,7 @@ export function TopListWidget({ id, userId, title, items, posters = [], type, ro
   // Filmstrip Theme (Movies)
   if (activeTheme === 'filmstrip' && type === 'movies') {
     return (
-      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-full max-w-[480px] mb-6 relative group font-sans">
+      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-[320px] sm:w-[480px] max-w-full mb-6 relative group font-sans">
         <div className="bg-[#111] p-3 border-r-[8px] border-b-[8px] border-black shadow-[8px_8px_0_0_#cc0000] relative overflow-hidden flex flex-col">
            {/* Perforations Top */}
            <div className="flex justify-between px-1 py-2 border-b border-white/10 mb-2">
@@ -272,7 +272,7 @@ export function TopListWidget({ id, userId, title, items, posters = [], type, ro
   // Cassette Theme (Songs)
   if (activeTheme === 'cassette' && type === 'songs') {
     return (
-      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-full max-w-[320px] mb-6 relative group font-sans">
+      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-[280px] sm:w-[320px] max-w-full mb-6 relative group font-sans">
         <div className="bg-[#f0f0f0] border border-black shadow-[6px_6px_0_0_#111] p-0 relative overflow-hidden flex h-[400px]">
            {/* Cassette Spine Area */}
            <div className="w-[45px] border-r-2 border-[#111] bg-white flex flex-col relative shadow-[2px_0_4px_rgba(0,0,0,0.1)] shrink-0 z-10 p-2">
@@ -325,7 +325,7 @@ export function TopListWidget({ id, userId, title, items, posters = [], type, ro
   // CD Theme (Songs)
   if (activeTheme === 'cd' && type === 'songs') {
     return (
-      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-full max-w-[340px] mb-6 relative group font-sans">
+      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 mb-6 relative group font-sans">
         <div className="bg-[#e4e4e4] border-l-[12px] border-[#222] rounded-sm p-4 shadow-[8px_8px_0_rgba(0,0,0,1)] relative flex flex-col min-h-[380px] overflow-hidden border-y border-r border-[#bebebe]">
            {/* Hinge detail */}
            <div className="absolute top-[30px] left-[-12px] w-[12px] h-[30px] bg-[#111] border-y border-gray-600" />
@@ -364,7 +364,7 @@ export function TopListWidget({ id, userId, title, items, posters = [], type, ro
   // Vinyl Theme (Songs)
   if (activeTheme === 'vinyl' && type === 'songs') {
     return (
-      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-full max-w-[340px] mb-6 relative group font-sans">
+      <motion.article initial={{ opacity: 0, scale: 0.95, rotate: rotation }} animate={{ opacity: 1, scale: 1, rotate: rotation }} whileHover={{ scale: 1.02, zIndex: 50 }} className="w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 mb-6 relative group font-sans">
          <div className="relative">
             {/* The Record Peeking Out */}
             <div className="absolute right-[-20px] top-[10%] w-[90%] h-[80%] bg-[#111] rounded-full border border-gray-800 shadow-xl group-hover:right-[-40px] transition-all duration-500 flex items-center justify-center z-0 overflow-hidden">
@@ -417,14 +417,14 @@ export function TopListWidget({ id, userId, title, items, posters = [], type, ro
   const borderClass = borderStyle === 'dashed' ? 'border-dashed' : borderStyle === 'dotted' ? 'border-dotted' : 'border-solid';
   
   const themeClasses: Record<string, string> = {
-    retro: `p-5 border-[3px] ${borderClass} ${borderColor} analog-shadow relative mb-4 w-full max-w-[340px] group ${textColor} ${fontClass} bg-paper-base`,
-    minimal: `p-5 rounded-3xl border ${borderClass} border-[#999] shadow-xl relative mb-4 w-full max-w-[340px] group ${textColor} ${fontClass} bg-white`,
-    brutalist: `p-5 border-[4px] border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative mb-4 w-full max-w-[340px] group uppercase font-bold text-black ${fontClass} bg-white`,
-    y2k: `p-5 rounded-[2rem] border-2 border-pink-300 shadow-[0_0_20px_rgba(255,105,180,0.3)] bg-gradient-to-br from-fuchsia-50 to-pink-100 relative mb-4 w-full max-w-[340px] group text-pink-900 ${fontClass}`,
-    gothic: `p-5 border-[3px] border-double ${borderColor} bg-black/90 shadow-[0_0_20px_rgba(0,0,0,0.8)] relative mb-4 w-full max-w-[340px] group text-red-100 ${fontClass}`,
-    medieval: `p-5 bg-gradient-to-b from-[#d4c3a9]/90 to-[#bca688]/90 border-[6px] border-[#8b7355] shadow-[6px_6px_15px_rgba(0,0,0,0.6)] rounded-tr-3xl rounded-bl-3xl relative mb-4 w-full max-w-[340px] group text-[#4a3b2c] ${fontClass}`,
-    scrapbook: `p-6 bg-white border border-gray-200 shadow-[3px_3px_12px_rgba(0,0,0,0.1)] -rotate-1 relative mb-4 w-full max-w-[340px] group text-gray-800 ${fontClass}`,
-    standard: `p-5 border-2 border-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] relative mb-4 w-full max-w-[340px] group ${textColor} ${fontClass} bg-white font-sans`,
+    retro: `p-5 border-[3px] ${borderClass} ${borderColor} analog-shadow relative mb-4 w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 group ${textColor} ${fontClass} bg-paper-base`,
+    minimal: `p-5 rounded-3xl border ${borderClass} border-[#999] shadow-xl relative mb-4 w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 group ${textColor} ${fontClass} bg-white`,
+    brutalist: `p-5 border-[4px] border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative mb-4 w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 group uppercase font-bold text-black ${fontClass} bg-white`,
+    y2k: `p-5 rounded-[2rem] border-2 border-pink-300 shadow-[0_0_20px_rgba(255,105,180,0.3)] bg-gradient-to-br from-fuchsia-50 to-pink-100 relative mb-4 w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 group text-pink-900 ${fontClass}`,
+    gothic: `p-5 border-[3px] border-double ${borderColor} bg-black/90 shadow-[0_0_20px_rgba(0,0,0,0.8)] relative mb-4 w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 group text-red-100 ${fontClass}`,
+    medieval: `p-5 bg-gradient-to-b from-[#d4c3a9]/90 to-[#bca688]/90 border-[6px] border-[#8b7355] shadow-[6px_6px_15px_rgba(0,0,0,0.6)] rounded-tr-3xl rounded-bl-3xl relative mb-4 w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 group text-[#4a3b2c] ${fontClass}`,
+    scrapbook: `p-6 bg-white border border-gray-200 shadow-[3px_3px_12px_rgba(0,0,0,0.1)] -rotate-1 relative mb-4 w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 group text-gray-800 ${fontClass}`,
+    standard: `p-5 border-2 border-black shadow-[6px_6px_0_0_rgba(0,0,0,1)] relative mb-4 w-[280px] sm:w-[340px] max-w-[85vw] shrink-0 group ${textColor} ${fontClass} bg-white font-sans`,
   };
 
   const currentThemeClass = themeClasses[activeTheme] || themeClasses['standard'];

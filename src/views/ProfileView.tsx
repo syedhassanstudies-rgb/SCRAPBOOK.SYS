@@ -100,7 +100,7 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
         dragMomentum={false}
         onDragEnd={(_, info) => handleDragEnd(piece.id, info)}
         whileDrag={{ scale: 1.02, zIndex: 500 }}
-        className={`${isOwner ? 'cursor-grab active:cursor-grabbing' : ''} relative z-10 w-fit shrink-0 max-w-[100vw] ${scaleClass} ${alignClass} flex justify-center`}
+        className={`${isOwner ? 'cursor-grab active:cursor-grabbing' : ''} relative z-10 w-fit shrink-0 max-w-full ${scaleClass} ${alignClass} flex justify-center`}
         style={{
           x: piece.style.offsetX || 0,
           y: piece.style.offsetY || 0,

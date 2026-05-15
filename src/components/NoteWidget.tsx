@@ -44,7 +44,7 @@ export function NoteWidget({ title, items, rotation = -3, design, bgColor, fontF
         initial={{ opacity: 0, x: -20, rotate: rotation }}
         animate={{ opacity: 1, x: 0, rotate: rotation }}
         whileHover={{ scale: 1.05, rotate: 0, zIndex: 50, transition: { duration: 0.3 } }}
-        className={`p-6 shadow-[2px_10px_20px_rgba(0,0,0,0.15)] relative w-full max-w-[280px] mb-4 group text-gray-800 ${fontClass}`}
+        className={`p-6 shadow-[2px_10px_20px_rgba(0,0,0,0.15)] relative w-[280px] sm:w-[280px] max-w-[85vw] shrink-0 mb-4 group text-gray-800 ${fontClass}`}
         style={{ 
            backgroundColor: bgColor || '#feff9c',
            borderBottomRightRadius: '15% 5%',

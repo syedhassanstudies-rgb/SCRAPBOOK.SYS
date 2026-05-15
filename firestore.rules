@@ -25,9 +25,12 @@ service cloud.firestore {
       allow create: if isOwner(userId) && isValidUser(incoming());
       
       allow update: if isOwner(userId) 
+                    && (incoming().uid == userId)
+                    && (existing().get('email', '') == '' || incoming().email == existing().email)
+                    && (existing().get('createdAt', '') == '' || incoming().createdAt == existing().createdAt)
                     && isValidUser(incoming())
                     && incoming().diff(existing()).affectedKeys()
-                        .hasOnly(['username', 'bio', 'subtitle', 'avatarUrl', 'isPublic', 'backgroundColor', 'backgroundPattern', 'headerBackgroundColor', 'theme', 'fontFamily', 'fontSize', 'titleFontFamily', 'titleFontSize']);
+                        .hasOnly(['username', 'bio', 'subtitle', 'avatarUrl', 'isPublic', 'backgroundColor', 'backgroundPattern', 'headerBackgroundColor', 'theme', 'fontFamily', 'fontSize', 'titleFontFamily', 'titleFontSize', 'email', 'createdAt']);
 
       // --- Pieces Subcollection ---
       match /pieces/{pieceId} {
@@ -51,20 +54,22 @@ service cloud.firestore {
     // --- Validation Helpers ---
     function isValidUser(data) {
       return data.keys().hasAll(['uid', 'username'])
+          && data.uid == request.auth.uid
           && data.username is string && data.username.size() <= 32
-          && (data.get('bio', '') is string && data.get('bio', '').size() <= 500)
-          && (data.get('subtitle', '') is string && data.get('subtitle', '').size() <= 50)
-          && (data.get('avatarUrl', '') is string && data.get('avatarUrl', '').size() <= 1024)
-          && (data.get('backgroundColor', '') is string && data.get('backgroundColor', '').size() <= 32)
-          && (data.get('headerBackgroundColor', '') is string && data.get('headerBackgroundColor', '').size() <= 32)
-          && (data.get('backgroundPattern', 'none') is string && data.get('backgroundPattern', 'none') in ['none', 'dots', 'grid', 'lines', 'diagonal', 'cross', 'checkerboard'])
-          && (data.get('theme', 'retro') is string && data.get('theme', 'retro') in ['retro', 'minimal', 'brutalist', 'y2k', 'standard', 'gothic', 'medieval', 'scrapbook'])
-          && (data.get('fontFamily', 'mono') is string && data.get('fontFamily', 'mono') in ['sans', 'serif', 'mono'])
-          && (data.get('titleFontFamily', 'serif') is string && data.get('titleFontFamily', 'serif') in ['sans', 'serif', 'mono'])
-          && (data.get('fontSize', 'md') is string && data.get('fontSize', 'md') in ['sm', 'md', 'lg'])
-          && (data.get('titleFontSize', 'lg') is string && data.get('titleFontSize', 'lg') in ['sm', 'md', 'lg', 'xl'])
+          && (data.get('email', '') is string && data.get('email', '').size() <= 256)
+          && (data.get('bio', '') is string && data.get('bio', '').size() <= 1000)
+          && (data.get('subtitle', '') is string && data.get('subtitle', '').size() <= 100)
+          && (data.get('avatarUrl', '') is string && data.get('avatarUrl', '').size() <= 2048)
+          && (data.get('backgroundColor', '') is string && data.get('backgroundColor', '').size() <= 64)
+          && (data.get('headerBackgroundColor', '') is string && data.get('headerBackgroundColor', '').size() <= 64)
+          && (data.get('theme', '') is string && data.get('theme', '').size() <= 64)
+          && (data.get('backgroundPattern', '') is string && data.get('backgroundPattern', '').size() <= 64)
+          && (data.get('fontFamily', '') is string && data.get('fontFamily', '').size() <= 64)
+          && (data.get('fontSize', '') is string && data.get('fontSize', '').size() <= 64)
+          && (data.get('titleFontFamily', '') is string && data.get('titleFontFamily', '').size() <= 64)
+          && (data.get('titleFontSize', '') is string && data.get('titleFontSize', '').size() <= 64)
           && (data.get('isPublic', true) is bool)
-          && data.uid == request.auth.uid;
+          && (data.get('createdAt', '') is string && data.get('createdAt', '').size() <= 128);
     }
 
     function isValidPiece(data) {

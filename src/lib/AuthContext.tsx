@@ -33,11 +33,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Initialize profile
             const newProfile: Profile = {
               uid: user.uid,
+              email: user.email || '',
               username: (user.displayName?.toLowerCase().replace(/[^a-z0-9]/g, '') || `user_${user.uid.slice(0, 5)}`).slice(0, 32),
               bio: 'Documenting the mundane & the magical.',
               subtitle: 'Creative Soul',
               avatarUrl: user.photoURL?.slice(0, 1024) || '',
               isPublic: true,
+              createdAt: new Date().toISOString(),
             };
             setDoc(profileRef, newProfile).catch(e => handleFirestoreError(e, OperationType.WRITE, `users/${user.uid}`));
           }
@@ -56,7 +58,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async () => {
     const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    try {
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      // To strictly bounce unwanted users, uncomment below and add your emails:
+      /*
+      const allowedEmails = ['kamranmemon1827@gmail.com'];
+      if (!allowedEmails.includes(result.user.email || '')) {
+         alert('This is a private beta. Please wait for an invite!');
+         await auth.signOut();
+      }
+      */
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const signOut = () => auth.signOut();

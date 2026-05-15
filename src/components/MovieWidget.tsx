@@ -97,7 +97,7 @@ export function MovieWidget({
           initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
           animate={{ opacity: 1, scale: 1, rotate: rotation }}
           whileHover={{ scale: 1.02, zIndex: 50 }}
-          className="w-full max-w-[320px] mb-6 relative group font-sans"
+          className="w-[280px] sm:w-[320px] max-w-full mb-6 relative group font-sans"
       >
         <div className={`
            flex gap-4 overflow-hidden relative
@@ -152,7 +152,7 @@ export function MovieWidget({
           initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
           animate={{ opacity: 1, scale: 1, rotate: rotation }}
           whileHover={{ scale: 1.02, zIndex: 50 }}
-          className="w-full max-w-[420px] mb-6 relative group"
+          className="w-[320px] sm:w-[420px] max-w-full mb-6 relative group"
       >
         <div className="bg-[#222] rounded-[4px] border border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] relative aspect-[1.5/1] p-4 flex flex-col justify-between overflow-hidden">
            {/* Texture/Depth */}
@@ -251,7 +251,7 @@ export function MovieWidget({
           initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
           animate={{ opacity: 1, scale: 1, rotate: rotation }}
           whileHover={{ scale: 1.02, zIndex: 50 }}
-          className="w-full max-w-[480px] mb-6 relative group"
+          className="w-[320px] sm:w-[480px] max-w-full mb-6 relative group"
       >
         <div className="bg-[#111] p-2 border-r-[6px] border-b-[6px] border-black shadow-[8px_8px_0_0_#b91c1c] relative overflow-hidden flex flex-col">
            {/* Top Perforations */}
@@ -330,7 +330,7 @@ export function MovieWidget({
         initial={{ opacity: 0, scale: 0.9, rotate: rotation }}
         animate={{ opacity: 1, scale: 1, rotate: rotation }}
         whileHover={{ scale: 1.02, zIndex: 50 }}
-        className="w-full max-w-[420px] mb-8 mt-2 relative group"
+        className="w-[320px] sm:w-[420px] max-w-full mb-8 mt-2 relative group"
     >
       <div className="bg-[#f2f4f8] border-2 border-black rounded-sm shadow-[8px_8px_0_0_rgba(0,0,0,1)] p-6 flex relative overflow-visible">
         {/* Top Right Ribbon */}

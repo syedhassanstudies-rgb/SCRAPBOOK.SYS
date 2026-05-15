@@ -16,6 +16,29 @@ import { Guestbook } from '../components/Guestbook';
 import { searchMovieDetails, searchMovieResults } from '../services/movieService';
 import { searchSpotifyTrack, searchSpotifyResults } from '../services/spotifyService';
 
+const localStickersGlob = import.meta.glob('/src/assets/stickers/*.{png,jpg,jpeg,svg,gif,webp}', { eager: true, query: '?url', import: 'default' });
+const localStickers = Object.entries(localStickersGlob).map(([path, url]) => {
+  const filename = path.split('/').pop() || '';
+  const name = filename.split('.')[0].replace(/[-_]/g, ' ');
+  return { name: name.charAt(0).toUpperCase() + name.slice(1), url: url as string };
+});
+
+const STICKER_CATALOG = [
+  ...localStickers,
+  { name: 'Red Heart', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Red%20Heart.png' },
+  { name: 'Sparkles', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Sparkles.png' },
+  { name: 'Fire', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Fire.png' },
+  { name: 'Star', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Star.png' },
+  { name: 'Ribbon', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Ribbon.png' },
+  { name: 'Ghost', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Ghost.png' },
+  { name: 'Skull', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Skull.png' },
+  { name: 'Alien', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Alien.png' },
+  { name: 'Butterfly', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Butterfly.png' },
+  { name: 'Cherry Blossom', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Cherry%20Blossom.png' },
+  { name: 'Four Leaf Clover', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Four%20Leaf%20Clover.png' },
+  { name: 'Mushroom', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Mushroom.png' },
+];
+
 export function EditorView() {
   const { user, profile, updateProfile } = useAuth();
   const [pieces, setPieces] = useState<ScrapbookPieceData[]>([]);
@@ -38,7 +61,29 @@ export function EditorView() {
     titleFontSize: profile?.titleFontSize || 'lg',
     fontFamily: profile?.fontFamily || 'mono',
     fontSize: profile?.fontSize || 'md',
+    isPublic: profile?.isPublic ?? true,
   });
+
+  // Sync header state when profile loads
+  useEffect(() => {
+    if (profile && !editingHeader) {
+      setHeaderState({
+        username: profile.username || '',
+        subtitle: profile.subtitle || '',
+        bio: profile.bio || '',
+        avatarUrl: profile.avatarUrl || '',
+        backgroundColor: profile.backgroundColor || '#f4f1ee',
+        backgroundPattern: profile.backgroundPattern || 'none',
+        headerBackgroundColor: profile.headerBackgroundColor || '#fffff8',
+        theme: profile.theme || 'retro',
+        titleFontFamily: profile.titleFontFamily || 'serif',
+        titleFontSize: profile.titleFontSize || 'lg',
+        fontFamily: profile.fontFamily || 'mono',
+        fontSize: profile.fontSize || 'md',
+        isPublic: profile.isPublic ?? true,
+      });
+    }
+  }, [profile, editingHeader]);
 
   useEffect(() => {
     if (!user) return;
@@ -70,7 +115,7 @@ export function EditorView() {
       movie: { title: 'Movie Title', year: '2024', rating: '8.5' },
       polaroid: { src: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=800', caption: 'New Memory' },
       guestbook: {},
-      decoration: { text: 'Decoration' },
+      decoration: { imageUrl: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Red%20Heart.png' },
       'top-movies': { title: 'Top 10 Movies', items: ['Inception', 'Pulp Fiction', 'The Godfather'] },
       'top-songs': { title: 'Top 10 Songs', items: ['Starboy', 'Blinding Lights', 'The Hills'] }
     };
@@ -252,16 +297,25 @@ export function EditorView() {
       />
       <div className={cn("max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop py-12 relative z-10 min-h-screen transition-colors duration-1000", getContrastText(headerState.backgroundColor))}>
         <div className="flex justify-between items-center mb-xl">
-        <h1 className="font-serif text-4xl italic transition-colors duration-1000">Page Editor</h1>
-        <div className="flex gap-4">
-           <button 
-             onClick={() => setIsAdding(true)}
-             className="bg-paper-ink text-white rounded-full px-5 py-2 flex items-center gap-2 hover:bg-black hover:-translate-y-0.5 shadow-sm transition-all uppercase text-xs font-bold"
-           >
-             <Plus size={16} /> Add Piece
-           </button>
+          <h1 className="font-serif text-4xl italic transition-colors duration-1000">Page Editor</h1>
+          <div className="flex gap-4">
+             <button 
+               onClick={() => {
+                 window.history.pushState({}, '', `/p/${user?.uid}`);
+                 window.dispatchEvent(new PopStateEvent('popstate'));
+               }}
+               className="bg-paper-base text-paper-ink border border-paper-outline/30 rounded-full px-5 py-2 flex items-center gap-2 hover:bg-paper-outline/10 hover:-translate-y-0.5 shadow-sm transition-all uppercase text-xs font-bold"
+             >
+               View Public Profile
+             </button>
+             <button 
+               onClick={() => setIsAdding(true)}
+               className="bg-paper-ink text-white rounded-full px-5 py-2 flex items-center gap-2 hover:bg-black hover:-translate-y-0.5 shadow-sm transition-all uppercase text-xs font-bold"
+             >
+               <Plus size={16} /> Add Piece
+             </button>
+          </div>
         </div>
-      </div>
 
       {/* Header Editor */}
       <section className="bg-white text-paper-ink rounded-2xl p-8 border border-paper-outline/20 mb-xl relative shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
@@ -385,6 +439,20 @@ export function EditorView() {
                       <option value="scrapbook">Paper Scrapbook</option>
                       <option value="standard">Standard Default</option>
                     </select>
+                  </div>
+
+                  <div className="flex items-center gap-3 col-span-full pt-4 border-t border-paper-outline/10">
+                    <input 
+                      type="checkbox" 
+                      id="isPublic"
+                      checked={headerState.isPublic}
+                      onChange={e => setHeaderState(s => ({...s, isPublic: e.target.checked}))}
+                      className="w-4 h-4 accent-paper-ink cursor-pointer"
+                    />
+                    <div className="flex flex-col">
+                      <label htmlFor="isPublic" className="text-xs font-bold uppercase tracking-widest cursor-pointer">Show in Discovery Directory</label>
+                      <p className="text-[10px] text-paper-outline italic">If disabled, only people with your direct link can see your archive.</p>
+                    </div>
                   </div>
                </div>
             </div>
@@ -591,9 +659,29 @@ export function EditorView() {
                 </>
               )}
               {piece.type === 'decoration' && (
-                <>
-                  <EditorInput label="Text" value={piece.data.text} onChange={v => updatePieceData(piece.id, {text: v})} />
-                </>
+                <div className="flex flex-col gap-4">
+                  <ImageUploadInput 
+                    label="Image URL / Upload" 
+                    value={piece.data.imageUrl || ''} 
+                    onChange={v => updatePieceData(piece.id, {imageUrl: v})} 
+                  />
+                  
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase">Sticker Catalog</label>
+                    <div className="grid grid-cols-4 gap-2 bg-paper-base/50 p-2 border border-paper-outline/20 rounded max-h-[200px] overflow-y-auto">
+                       {STICKER_CATALOG.map((sticker, idx) => (
+                         <button 
+                           key={idx}
+                           onClick={() => updatePieceData(piece.id, { imageUrl: sticker.url, text: '' })}
+                           className={`aspect-square border flex items-center justify-center p-2 rounded transition-all overflow-hidden ${piece.data.imageUrl === sticker.url ? 'border-paper-ink bg-white shadow-[2px_2px_0_0_rgba(0,0,0,1)]' : 'border-paper-outline/30 hover:border-paper-outline/70 hover:bg-white bg-transparent'}`}
+                           title={sticker.name}
+                         >
+                           <img src={sticker.url} alt={sticker.name} className="w-full h-full object-contain filter drop-shadow-sm" />
+                         </button>
+                       ))}
+                    </div>
+                  </div>
+                </div>
               )}
               {(piece.type === 'top-movies' || piece.type === 'top-songs') && (
                 <>
@@ -656,28 +744,32 @@ export function EditorView() {
                      className="accent-paper-secondary"
                    />
                 </div>
-                <div className="flex flex-col gap-1">
-                   <label className="text-[10px] font-bold uppercase">Accent Color</label>
-                   <select 
-                     value={piece.style.color || 'secondary'}
-                     onChange={e => updatePieceStyle(piece.id, {color: e.target.value})}
-                     className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
-                   >
-                     <option value="secondary">Rose</option>
-                     <option value="tertiary">Sage</option>
-                     <option value="primary">Grey</option>
-                     <option value="yellow">Yellow</option>
-                   </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                   <label className="text-[10px] font-bold uppercase">Background</label>
-                   <div 
-                     className="w-full h-7 border border-paper-outline flex-shrink-0 cursor-pointer overflow-hidden relative"
-                     style={{ backgroundColor: piece.style.bgColor || '#fffffb' }}
-                   >
-                     <input type="color" value={piece.style.bgColor || '#fffffb'} onChange={e => updatePieceStyle(piece.id, {bgColor: e.target.value})} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
-                   </div>
-                </div>
+                {piece.type !== 'decoration' && (
+                  <div className="flex flex-col gap-1">
+                     <label className="text-[10px] font-bold uppercase">Accent Color</label>
+                     <select 
+                       value={piece.style.color || 'secondary'}
+                       onChange={e => updatePieceStyle(piece.id, {color: e.target.value})}
+                       className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                     >
+                       <option value="secondary">Rose</option>
+                       <option value="tertiary">Sage</option>
+                       <option value="primary">Grey</option>
+                       <option value="yellow">Yellow</option>
+                     </select>
+                  </div>
+                )}
+                {piece.type !== 'decoration' && (
+                  <div className="flex flex-col gap-1">
+                     <label className="text-[10px] font-bold uppercase">Background</label>
+                     <div 
+                       className="w-full h-7 border border-paper-outline flex-shrink-0 cursor-pointer overflow-hidden relative"
+                       style={{ backgroundColor: piece.style.bgColor || '#fffffb' }}
+                     >
+                       <input type="color" value={piece.style.bgColor || '#fffffb'} onChange={e => updatePieceStyle(piece.id, {bgColor: e.target.value})} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
+                     </div>
+                  </div>
+                )}
                 
 
                 
@@ -695,50 +787,56 @@ export function EditorView() {
                    </select>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                   <label className="text-[10px] font-bold uppercase">Font</label>
-                   <select 
-                     value={piece.style.fontFamily || 'sans'}
-                     onChange={e => updatePieceStyle(piece.id, {fontFamily: e.target.value as any})}
-                     className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
-                   >
-                     <option value="sans">Sans-serif</option>
-                     <option value="serif">Serif</option>
-                     <option value="mono">Monospace</option>
-                   </select>
-                </div>
+                {piece.type !== 'decoration' && (
+                  <div className="flex flex-col gap-1">
+                     <label className="text-[10px] font-bold uppercase">Font</label>
+                     <select 
+                       value={piece.style.fontFamily || 'sans'}
+                       onChange={e => updatePieceStyle(piece.id, {fontFamily: e.target.value as any})}
+                       className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                     >
+                       <option value="sans">Sans-serif</option>
+                       <option value="serif">Serif</option>
+                       <option value="mono">Monospace</option>
+                     </select>
+                  </div>
+                )}
 
-                <div className="flex flex-col gap-1">
-                   <label className="text-[10px] font-bold uppercase">Border Style</label>
-                   <select 
-                     value={piece.style.borderStyle || 'solid'}
-                     onChange={e => updatePieceStyle(piece.id, {borderStyle: e.target.value as any})}
-                     className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
-                   >
-                     <option value="solid">Solid</option>
-                     <option value="dashed">Dashed</option>
-                     <option value="dotted">Dotted</option>
-                   </select>
-                </div>
+                {piece.type !== 'decoration' && (
+                  <div className="flex flex-col gap-1">
+                     <label className="text-[10px] font-bold uppercase">Border Style</label>
+                     <select 
+                       value={piece.style.borderStyle || 'solid'}
+                       onChange={e => updatePieceStyle(piece.id, {borderStyle: e.target.value as any})}
+                       className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                     >
+                       <option value="solid">Solid</option>
+                       <option value="dashed">Dashed</option>
+                       <option value="dotted">Dotted</option>
+                     </select>
+                  </div>
+                )}
 
-                <div className="flex flex-col gap-1 col-span-full">
-                   <label className="text-[10px] font-bold uppercase">Widget Theme (Overrides Profile)</label>
-                   <select 
-                     value={piece.data.theme || ''}
-                     onChange={e => updatePieceData(piece.id, {theme: e.target.value as any})}
-                     className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
-                   >
-                     <option value="">Default (Use Profile Theme)</option>
-                     <option value="retro">Retro Polaroid</option>
-                     <option value="minimal">Minimal Modern</option>
-                     <option value="brutalist">Brutalist</option>
-                     <option value="y2k">Y2K Cyber</option>
-                     <option value="gothic">Gothic / Vampire</option>
-                     <option value="medieval">Medieval / Fantasy</option>
-                     <option value="scrapbook">Paper Scrapbook</option>
-                     <option value="standard">Standard Default</option>
-                   </select>
-                </div>
+                {piece.type !== 'decoration' && (
+                  <div className="flex flex-col gap-1 col-span-full">
+                     <label className="text-[10px] font-bold uppercase">Widget Theme (Overrides Profile)</label>
+                     <select 
+                       value={piece.data.theme || ''}
+                       onChange={e => updatePieceData(piece.id, {theme: e.target.value as any})}
+                       className="bg-paper-base border border-paper-outline text-xs p-1 focus:outline-none"
+                     >
+                       <option value="">Default (Use Profile Theme)</option>
+                       <option value="retro">Retro Polaroid</option>
+                       <option value="minimal">Minimal Modern</option>
+                       <option value="brutalist">Brutalist</option>
+                       <option value="y2k">Y2K Cyber</option>
+                       <option value="gothic">Gothic / Vampire</option>
+                       <option value="medieval">Medieval / Fantasy</option>
+                       <option value="scrapbook">Paper Scrapbook</option>
+                       <option value="standard">Standard Default</option>
+                     </select>
+                  </div>
+                )}
               </div>
             </div>
 

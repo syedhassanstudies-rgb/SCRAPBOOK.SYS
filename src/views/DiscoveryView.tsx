@@ -4,9 +4,12 @@ import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Polaroid } from '../components/Polaroid';
 import { UserProfile } from '../types';
 
+import { useAuth } from '../lib/AuthContext';
+
 export function DiscoveryView({ onNavigate }: { onNavigate?: (path: string) => void }) {
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user, signIn } = useAuth();
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -34,6 +37,24 @@ export function DiscoveryView({ onNavigate }: { onNavigate?: (path: string) => v
 
   return (
     <div className="max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop py-xl">
+      
+      {!user && (
+        <div className="bg-[#cc0000] text-white rounded-xl p-6 mb-12 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-6 shadow-[8px_8px_0_0_#111] border-4 border-black relative overflow-hidden">
+          <div className="z-10 relative">
+            <h2 className="font-serif text-3xl italic font-bold mb-2 tracking-tight uppercase border-b-2 border-white/30 inline-block pb-1">Private Beta</h2>
+            <p className="max-w-lg text-sm font-sans mb-0 font-bold tracking-tight">
+              A private directory of digital scrapbooks. If you've been invited by a member, sign in to claim your archive.
+            </p>
+          </div>
+          <button 
+            onClick={signIn} 
+            className="z-10 bg-white text-black px-8 py-3 rounded font-bold uppercase tracking-widest text-xs hover:bg-gray-200 transition-colors shrink-0 shadow-[4px_4px_0_0_#111] border-2 border-black active:translate-y-[2px] active:translate-x-[2px] active:shadow-[2px_2px_0_0_#111]"
+          >
+            Sign in with Google
+          </button>
+        </div>
+      )}
+
       <div className="mb-xl text-center md:text-left relative">
         <h1 className="font-serif text-5xl md:text-7xl italic mb-4 tracking-tighter">Discovery</h1>
         <p className="text-paper-outline text-sm md:text-md max-w-md">Peek into the archives of creative souls. A directory of digital scrapbooks.</p>
