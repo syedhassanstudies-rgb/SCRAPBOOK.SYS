@@ -45,6 +45,28 @@ export function Navigation() {
         </div>
       </header>
 
+      {/* Mobile Top Header */}
+      <header className="w-full top-0 sticky z-50 bg-[#fffffb]/90 backdrop-blur-md border-b border-paper-outline/10 shadow-sm md:hidden flex justify-between items-center px-4 py-3">
+         <div 
+            onClick={() => { window.history.pushState({}, '', '/'); window.dispatchEvent(new PopStateEvent('popstate')); }}
+            className="font-serif text-xl font-bold tracking-tighter italic cursor-pointer truncate"
+         >
+            SCRAPBOOK.SYS
+         </div>
+         <div className="flex gap-3 items-center shrink-0">
+            <GlobalSearch />
+            {user ? (
+               <button onClick={signOut} className="text-paper-outline p-1" title="Sign Out">
+                  <LogOut size={20} />
+               </button>
+            ) : (
+               <button onClick={signIn} className="bg-paper-ink text-white px-3 py-1.5 rounded flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider">
+                  <LogIn size={14} /> Join
+               </button>
+            )}
+         </div>
+      </header>
+
       {/* Mobile Nav */}
       <nav className="fixed bottom-0 left-0 w-full md:hidden z-50 bg-[#fffffb]/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.1)] border-t border-paper-outline/20 pb-safe">
         <div className="flex justify-around items-center py-3">

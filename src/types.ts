@@ -12,6 +12,8 @@ export interface ScrapbookPieceData {
     y: number;
     offsetX?: number;
     offsetY?: number;
+    mobileOffsetX?: number;
+    mobileOffsetY?: number;
     rotate: number;
     zIndex: number;
     color?: 'secondary' | 'tertiary' | 'primary' | 'yellow';

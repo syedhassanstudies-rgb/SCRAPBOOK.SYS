@@ -1,7 +1,10 @@
 import { motion } from 'motion/react';
 import { Sparkles } from 'lucide-react';
+import { resolveStickerUrl } from '../lib/stickers';
 
 interface DecorationProps {
+  id?: string;
+  userId?: string;
   text?: string;
   imageUrl?: string;
   rotation?: number;
@@ -28,16 +31,18 @@ export function Decoration({ text, imageUrl, rotation = -12, color = 'tertiary',
   };
 
   const currentThemeClass = themeClasses[theme] || themeClasses['retro'];
+  
+  const finalImageUrl = resolveStickerUrl(imageUrl);
 
-  if (imageUrl) {
+  if (finalImageUrl) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1, rotate: rotation }}
-        className="relative pointer-events-none w-32 h-32 flex items-center justify-center"
+        className="relative pointer-events-none w-32 h-32 flex items-center justify-center p-2"
       >
         <img 
-          src={imageUrl} 
+          src={finalImageUrl} 
           alt="sticker" 
           className="w-full h-full object-contain filter drop-shadow-md" 
           draggable={false}

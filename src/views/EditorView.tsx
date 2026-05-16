@@ -15,29 +15,7 @@ import { TopListWidget } from '../components/TopListWidget';
 import { Guestbook } from '../components/Guestbook';
 import { searchMovieDetails, searchMovieResults } from '../services/movieService';
 import { searchSpotifyTrack, searchSpotifyResults } from '../services/spotifyService';
-
-const localStickersGlob = import.meta.glob('/src/assets/stickers/*.{png,jpg,jpeg,svg,gif,webp}', { eager: true, query: '?url', import: 'default' });
-const localStickers = Object.entries(localStickersGlob).map(([path, url]) => {
-  const filename = path.split('/').pop() || '';
-  const name = filename.split('.')[0].replace(/[-_]/g, ' ');
-  return { name: name.charAt(0).toUpperCase() + name.slice(1), url: url as string };
-});
-
-const STICKER_CATALOG = [
-  ...localStickers,
-  { name: 'Red Heart', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Red%20Heart.png' },
-  { name: 'Sparkles', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Sparkles.png' },
-  { name: 'Fire', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Fire.png' },
-  { name: 'Star', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Star.png' },
-  { name: 'Ribbon', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Ribbon.png' },
-  { name: 'Ghost', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Ghost.png' },
-  { name: 'Skull', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Skull.png' },
-  { name: 'Alien', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Alien.png' },
-  { name: 'Butterfly', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Butterfly.png' },
-  { name: 'Cherry Blossom', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Cherry%20Blossom.png' },
-  { name: 'Four Leaf Clover', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Four%20Leaf%20Clover.png' },
-  { name: 'Mushroom', url: 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Mushroom.png' },
-];
+import { STICKER_CATALOG } from '../lib/stickers';
 
 export function EditorView() {
   const { user, profile, updateProfile } = useAuth();
@@ -666,17 +644,17 @@ export function EditorView() {
                     onChange={v => updatePieceData(piece.id, {imageUrl: v})} 
                   />
                   
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 w-full">
                     <label className="text-[10px] font-bold uppercase">Sticker Catalog</label>
-                    <div className="grid grid-cols-4 gap-2 bg-paper-base/50 p-2 border border-paper-outline/20 rounded max-h-[200px] overflow-y-auto">
+                    <div className="flex flex-wrap gap-2 bg-paper-base/50 p-2 border border-paper-outline/20 rounded max-h-[240px] overflow-y-auto w-full">
                        {STICKER_CATALOG.map((sticker, idx) => (
                          <button 
                            key={idx}
-                           onClick={() => updatePieceData(piece.id, { imageUrl: sticker.url, text: '' })}
-                           className={`aspect-square border flex items-center justify-center p-2 rounded transition-all overflow-hidden ${piece.data.imageUrl === sticker.url ? 'border-paper-ink bg-white shadow-[2px_2px_0_0_rgba(0,0,0,1)]' : 'border-paper-outline/30 hover:border-paper-outline/70 hover:bg-white bg-transparent'}`}
+                           onClick={() => updatePieceData(piece.id, { imageUrl: sticker.id, text: '' })}
+                           className={`w-14 h-14 shrink-0 border flex items-center justify-center p-1 rounded transition-all overflow-hidden ${piece.data.imageUrl === sticker.id ? 'border-paper-ink bg-white shadow-[2px_2px_0_0_rgba(0,0,0,1)]' : 'border-paper-outline/30 hover:border-paper-outline/70 hover:bg-white bg-transparent'}`}
                            title={sticker.name}
                          >
-                           <img src={sticker.url} alt={sticker.name} className="w-full h-full object-contain filter drop-shadow-sm" />
+                           <img src={sticker.url} alt={sticker.name} loading="lazy" className="w-[80%] h-[80%] object-contain filter drop-shadow-sm" />
                          </button>
                        ))}
                     </div>

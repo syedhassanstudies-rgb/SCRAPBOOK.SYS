@@ -24,8 +24,16 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
   const [pieces, setPieces] = useState<ScrapbookPieceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const boundsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -58,11 +66,27 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
     const piece = pieces.find(p => p.id === pieceId);
     if (!piece) return;
 
+    let currentX = piece.style.offsetX || 0;
+    if (isMobile) {
+        currentX = piece.style.mobileOffsetX ?? 0;
+    } else {
+        if (typeof window !== 'undefined') {
+          const maxAllowedX = window.innerWidth / 2 - 40;
+          if (currentX > maxAllowedX) currentX = maxAllowedX;
+          if (currentX < -maxAllowedX) currentX = -maxAllowedX;
+        }
+    }
+    
+    let currentY = piece.style.offsetY || 0;
+    if (isMobile) {
+        currentY = piece.style.mobileOffsetY ?? 0;
+    }
+
     const maxZ = Math.max(...pieces.map(p => p.style.zIndex || 0), 10);
     try {
       await updateDoc(doc(db, 'users', userId, 'pieces', pieceId), sanitizeData({
-        'style.offsetX': (piece.style.offsetX || 0) + info.offset.x,
-        'style.offsetY': (piece.style.offsetY || 0) + info.offset.y,
+        [isMobile ? 'style.mobileOffsetX' : 'style.offsetX']: currentX + info.offset.x,
+        [isMobile ? 'style.mobileOffsetY' : 'style.offsetY']: currentY + info.offset.y,
         'style.zIndex': maxZ + 1
       }));
     } catch (error) {
@@ -91,6 +115,18 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
     };
     const alignClass = alignClasses[(piece.style.align as 'left'|'center'|'right') || 'center'];
 
+    let x = piece.style.offsetX || 0;
+    let y = piece.style.offsetY || 0;
+    
+    if (isMobile) {
+       x = piece.style.mobileOffsetX ?? 0;
+       y = piece.style.mobileOffsetY ?? 0;
+    } else if (typeof window !== 'undefined') {
+       const maxAllowedX = window.innerWidth / 2 - 40;
+       if (x > maxAllowedX) x = maxAllowedX;
+       if (x < -maxAllowedX) x = -maxAllowedX;
+    }
+
     return (
       <motion.div
         key={piece.id}
@@ -102,8 +138,8 @@ export function ProfileView({ userId, isOwner }: ProfileViewProps) {
         whileDrag={{ scale: 1.02, zIndex: 500 }}
         className={`${isOwner ? 'cursor-grab active:cursor-grabbing' : ''} relative z-10 w-fit shrink-0 max-w-full ${scaleClass} ${alignClass} flex justify-center`}
         style={{
-          x: piece.style.offsetX || 0,
-          y: piece.style.offsetY || 0,
+          x,
+          y,
           zIndex: piece.style.zIndex || 1
         }}
       >
